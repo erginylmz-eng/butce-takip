@@ -255,6 +255,58 @@
   </div>
 
   <div class="card">
+    <h2>Bankalar Arası Transfer</h2>
+    <form id="transferForm">
+      <div class="row2">
+        <div>
+          <label for="transferKaynakBanka">Kaynak Banka (paranın çıktığı)</label>
+          <select id="transferKaynakBanka">
+            <option>Akbank</option>
+            <option>Enpara</option>
+            <option>Garanti BBVA</option>
+            <option>İşbank</option>
+            <option>VakıfBank</option>
+            <option>Yapı Kredi</option>
+            <option>Ziraat Bankası</option>
+            <option selected>Diğer</option>
+          </select>
+        </div>
+        <div>
+          <label for="transferHedefBanka">Hedef Banka (paranın girdiği)</label>
+          <select id="transferHedefBanka">
+            <option selected>Akbank</option>
+            <option>Enpara</option>
+            <option>Garanti BBVA</option>
+            <option>İşbank</option>
+            <option>VakıfBank</option>
+            <option>Yapı Kredi</option>
+            <option>Ziraat Bankası</option>
+            <option>Diğer</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="transferTarih">Tarih</label>
+      <input type="date" id="transferTarih" required>
+
+      <label for="transferTutar">Tutar (₺)</label>
+      <input type="number" id="transferTutar" step="0.01" min="0" placeholder="0.00" required>
+
+      <label for="transferAciklama">Açıklama (opsiyonel)</label>
+      <input type="text" id="transferAciklama" placeholder="Boş bırakılırsa otomatik oluşturulur">
+
+      <label for="transferDurum">Gerçekleşme Durumu</label>
+      <select id="transferDurum">
+        <option>Bütçe</option>
+        <option selected>Gerçekleşen</option>
+      </select>
+
+      <button type="submit" class="submit-btn" id="transferSubmitBtn">Transferi Kaydet</button>
+      <p class="hint">Kaydettiğinizde kaynak bankaya gider (eksi), hedef bankaya gelir (artı) olacak şekilde iki bağlantılı kayıt oluşturulur; her ikisi de "Banka Transferi" olarak etiketlenir ve Toplam Gelir/Gider ile kategori grafiğine gerçek gelir/gider olarak dahil edilmez. Bir transferi silmek/düzenlemek isterseniz Kayıtlar bölümünden her iki kaydı da ayrı ayrı bulup işlem yapmanız gerekir.</p>
+    </form>
+  </div>
+
+  <div class="card">
     <h2>Kayıtlar</h2>
 
     <div class="top-actions">
@@ -308,6 +360,7 @@
                 <option>Şirket Masrafları</option>
                 <option>Bes</option>
                 <option>Elden Ödeme</option>
+                <option>Banka Transferi</option>
               </select>
             </th>
             <th>
@@ -354,7 +407,7 @@
       <div class="stat gider"><div class="label">Toplam Gider</div><div class="value" id="sumGider">0 ₺</div></div>
       <div class="stat"><div class="label">Genel Bakiye</div><div class="value" id="sumBakiye">0 ₺</div></div>
     </div>
-    <p class="hint">Toplam Gelir/Gider yukarıdaki filtrelere (banka, yıl, ay, arama) göre hesaplanır. Genel Bakiye, seçili dönemden bağımsız olarak güncel toplam bakiyeyi gösterir.</p>
+    <p class="hint">Toplam Gelir/Gider yukarıdaki filtrelere (banka, yıl, ay, arama) göre hesaplanır ve "Banka Transferi" kayıtlarını içermez (gerçek gelir/gider değildir). Genel Bakiye, seçili dönemden bağımsız olarak güncel toplam bakiyeyi gösterir.</p>
   </div>
 
   <div class="card">
@@ -465,7 +518,17 @@ const editingBanner = document.getElementById('editingBanner');
 const editingKodEl = document.getElementById('editingKod');
 const bankFilter = document.getElementById('bankFilter');
 
+const transferFormEl = document.getElementById('transferForm');
+const transferKaynakBankaEl = document.getElementById('transferKaynakBanka');
+const transferHedefBankaEl = document.getElementById('transferHedefBanka');
+const transferTarihEl = document.getElementById('transferTarih');
+const transferTutarEl = document.getElementById('transferTutar');
+const transferAciklamaEl = document.getElementById('transferAciklama');
+const transferDurumEl = document.getElementById('transferDurum');
+const transferSubmitBtn = document.getElementById('transferSubmitBtn');
+
 tarihEl.valueAsDate = new Date();
+transferTarihEl.valueAsDate = new Date();
 
 function fmt(n){
   n = Number(n) || 0;
@@ -662,9 +725,12 @@ function renderTable(){
     viewHint.textContent = 'Banka bazlı veritabanı görünümü: yalnızca ' + bankFilter.value + ' sekmesi, o bankaya özel bakiye ile.';
   }
 
-  // Toplam Gelir/Gider: geçerli tüm filtrelere göre (banka, arama, yıl, ay, borç tipi, durum)
+  // Toplam Gelir/Gider: geçerli tüm filtrelere göre (banka, arama, yıl, ay, borç tipi, durum).
+  // "Banka Transferi" kayıtları gerçek gelir/gider olmadığı (sadece kendi hesapları
+  // arasında para taşıma) için bu toplamlara dahil edilmez.
   let totalGelir = 0, totalGider = 0;
   rows.forEach(r => {
+    if(r.borcTipi === 'Banka Transferi') return;
     totalGelir += Number(r.gelir) || 0;
     totalGider += Number(r.gider) || 0;
   });
@@ -777,11 +843,11 @@ function renderBalanceChart(){
 function renderChartsInner(){
   renderBalanceChart();
 
-  // Borç Tipine Göre Gider Dağılımı
+  // Borç Tipine Göre Gider Dağılımı ("Gelir" ve "Banka Transferi" gerçek gider olmadığı için hariç)
   const categoryTotals = {};
   masterRows.forEach(r => {
     const cat = r.borcTipi || 'Diğer';
-    if(cat === 'Gelir') return;
+    if(cat === 'Gelir' || cat === 'Banka Transferi') return;
     categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(r.gider) || 0);
   });
   const catLabels = Object.keys(categoryTotals).filter(k => categoryTotals[k] > 0);
@@ -920,6 +986,50 @@ document.getElementById('entryForm').addEventListener('submit', async function(e
   }
 });
 
+/* ---------- Bankalar arası transfer ---------- */
+transferFormEl.addEventListener('submit', async function(e){
+  e.preventDefault();
+
+  const kaynak = transferKaynakBankaEl.value;
+  const hedef = transferHedefBankaEl.value;
+  if(kaynak === hedef){
+    alert('Kaynak ve hedef banka aynı olamaz.');
+    return;
+  }
+  const tutar = parseFloat(transferTutarEl.value);
+  if(!tutar || tutar <= 0){ return; }
+
+  const payload = {
+    action: 'transfer',
+    kaynakBanka: kaynak,
+    hedefBanka: hedef,
+    tarih: transferTarihEl.value,
+    tutar: tutar,
+    aciklama: transferAciklamaEl.value || '',
+    durum: transferDurumEl.value
+  };
+
+  transferSubmitBtn.disabled = true;
+  transferSubmitBtn.textContent = 'Kaydediliyor...';
+
+  try {
+    const json = await apiPost(payload);
+    if(json.ok){
+      transferFormEl.reset();
+      transferTarihEl.valueAsDate = new Date();
+      transferDurumEl.value = 'Gerçekleşen';
+      await loadAll();
+    } else {
+      alert('Transfer kaydedilemedi: ' + json.error);
+    }
+  } catch(err){
+    alert('Transfer hatası: ' + err.message);
+  } finally {
+    transferSubmitBtn.disabled = false;
+    transferSubmitBtn.textContent = 'Transferi Kaydet';
+  }
+});
+
 /* ---------- Excel'e dışa aktarım ---------- */
 document.getElementById('exportExcelBtn').addEventListener('click', () => {
   if(typeof XLSX === 'undefined'){
@@ -1001,7 +1111,8 @@ const BORCTIPI_ALIASES = {
   'gelir':'Gelir', 'sabit giderler':'Sabit Giderler', 'kredi':'Kredi',
   'kredi kartı':'Kredi Kartı', 'kredi karti':'Kredi Kartı',
   'şirket masrafları':'Şirket Masrafları', 'sirket masraflari':'Şirket Masrafları',
-  'bes':'Bes', 'elden ödeme':'Elden Ödeme', 'elden odeme':'Elden Ödeme'
+  'bes':'Bes', 'elden ödeme':'Elden Ödeme', 'elden odeme':'Elden Ödeme',
+  'banka transferi':'Banka Transferi', 'transfer':'Banka Transferi'
 };
 const HEADER_ALIASES = {
   tarih: ['ödeme tarihi','odeme tarihi','tarih'],
