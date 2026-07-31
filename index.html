@@ -52,6 +52,7 @@
     color:var(--text);
   }
   input:focus, select:focus{outline:2px solid var(--primary);outline-offset:1px;border-color:var(--primary);}
+  input[readonly]{background:#f3f4f6;color:var(--muted);cursor:not-allowed;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .type-toggle{display:flex;gap:8px;margin-top:6px;}
   .type-toggle button{
@@ -292,8 +293,8 @@
       <label for="transferTutar">Tutar (₺)</label>
       <input type="number" id="transferTutar" step="0.01" min="0" placeholder="0.00" required>
 
-      <label for="transferAciklama">Açıklama (opsiyonel)</label>
-      <input type="text" id="transferAciklama" placeholder="Boş bırakılırsa otomatik oluşturulur">
+      <label for="transferAciklama">Açıklama (otomatik oluşturulur)</label>
+      <input type="text" id="transferAciklama" readonly>
 
       <label for="transferDurum">Gerçekleşme Durumu</label>
       <select id="transferDurum">
@@ -541,6 +542,40 @@ const transferSubmitBtn = document.getElementById('transferSubmitBtn');
 
 tarihEl.valueAsDate = new Date();
 transferTarihEl.valueAsDate = new Date();
+
+// Bankalar arası transferde Açıklama alanı kullanıcı tarafından düzenlenemez;
+// kaynak/hedef banka seçimine göre otomatik "X'tan Y'ya EFT" metni üretilir.
+// Sabit 8 banka adı için doğru Türkçe hâl eki (-'tan/-'ten/-'dan/-'den ve
+// -'a/-'e/-'ya/-'ye) burada elle (doğru şekilde) tanımlanmıştır.
+const TRANSFER_KAYNAK_EKI = {
+  'Akbank': "Akbank'tan",
+  'Enpara': "Enpara'dan",
+  'Garanti BBVA': "Garanti BBVA'dan",
+  'İşbank': "İşbank'tan",
+  'VakıfBank': "VakıfBank'tan",
+  'Yapı Kredi': "Yapı Kredi'den",
+  'Ziraat Bankası': "Ziraat Bankası'ndan",
+  'Diğer': "Diğer'den"
+};
+const TRANSFER_HEDEF_EKI = {
+  'Akbank': "Akbank'a",
+  'Enpara': "Enpara'ya",
+  'Garanti BBVA': "Garanti BBVA'ya",
+  'İşbank': "İşbank'a",
+  'VakıfBank': "VakıfBank'a",
+  'Yapı Kredi': "Yapı Kredi'ye",
+  'Ziraat Bankası': "Ziraat Bankası'na",
+  'Diğer': "Diğer'e"
+};
+
+function updateTransferAciklama(){
+  const kaynakEki = TRANSFER_KAYNAK_EKI[transferKaynakBankaEl.value] || (transferKaynakBankaEl.value + "'tan");
+  const hedefEki = TRANSFER_HEDEF_EKI[transferHedefBankaEl.value] || (transferHedefBankaEl.value + "'a");
+  transferAciklamaEl.value = kaynakEki + ' ' + hedefEki + ' EFT';
+}
+transferKaynakBankaEl.addEventListener('change', updateTransferAciklama);
+transferHedefBankaEl.addEventListener('change', updateTransferAciklama);
+updateTransferAciklama();
 
 function fmt(n){
   n = Number(n) || 0;
@@ -1046,6 +1081,7 @@ transferFormEl.addEventListener('submit', async function(e){
       transferFormEl.reset();
       transferTarihEl.valueAsDate = new Date();
       transferDurumEl.value = 'Gerçekleşen';
+      updateTransferAciklama();
       await loadAll();
     } else {
       alert('Transfer kaydedilemedi: ' + json.error);
