@@ -85,6 +85,11 @@
   table{width:100%;border-collapse:collapse;font-size:12.5px;}
   th, td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
   th{color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0;}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--primary);}
+  th .sort-arrow{font-size:10px;margin-left:3px;color:var(--primary);}
+  .filter-row th{padding:5px 6px;background:#fff;position:sticky;top:29px;}
+  .filter-row input, .filter-row select{width:100%;padding:4px 6px;font-size:11.5px;border:1px solid var(--border);border-radius:5px;}
   td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .gelir-text{color:var(--gelir);}
   .gider-text{color:var(--gider);}
@@ -113,11 +118,29 @@
   .bulk-trigger-wrap{margin-bottom:18px;}
   .bulk-trigger-wrap button{width:100%;padding:12px;font-size:14px;}
 
+  .period-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .period-selects{display:flex;gap:8px;flex-wrap:wrap;}
+  .period-selects select{width:auto;min-width:110px;}
+  @media (max-width:480px){.period-bar{flex-direction:column;align-items:stretch;} .period-selects{flex-direction:column;}}
+
+  .charts-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .charts-header h2{margin:0;}
   .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media (max-width:700px){.charts-grid{grid-template-columns:1fr;}}
   .chart-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .chart-box.wide{grid-column:1 / -1;}
   .chart-box h3{font-size:13px;margin:0 0 10px;color:var(--text);font-weight:600;}
+  .chart-box-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .chart-box-header h3{margin:0;}
+  .chart-filter-selects{display:flex;gap:6px;}
+  .chart-filter-selects select{width:auto;min-width:88px;padding:5px 6px;font-size:11.5px;}
   .chart-canvas-wrap{position:relative;height:230px;}
+  .negative-alert{
+    margin-top:12px;padding:10px 12px;border-radius:8px;background:#fef2f2;
+    border:1px solid #fecaca;color:#b91c1c;font-size:12.5px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  }
+  .negative-alert strong{font-size:14px;}
 
   .modal-overlay{
     display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);
@@ -233,11 +256,6 @@
 
   <div class="card">
     <h2>Kayıtlar</h2>
-    <div class="summary-cards">
-      <div class="stat gelir"><div class="label">Toplam Gelir</div><div class="value" id="sumGelir">0 ₺</div></div>
-      <div class="stat gider"><div class="label">Toplam Gider</div><div class="value" id="sumGider">0 ₺</div></div>
-      <div class="stat"><div class="label">Genel Bakiye</div><div class="value" id="sumBakiye">0 ₺</div></div>
-    </div>
 
     <div class="top-actions">
       <div class="filter-bar">
@@ -256,7 +274,6 @@
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn-secondary" id="refreshBtn">Yenile</button>
-        <button class="btn-secondary" id="exportBtn">CSV Dışa Aktar</button>
       </div>
     </div>
     <p class="hint" id="viewModeHint" style="margin-top:-6px;margin-bottom:10px;">Tarih bazlı veritabanı görünümü: tüm bankalar, tarih sırasına göre, genel bakiye ile.</p>
@@ -265,31 +282,113 @@
       <table>
         <thead>
           <tr>
-            <th>Kod</th><th>Tarih</th><th>Açıklama</th><th>Banka</th><th>Borç Tipi</th>
-            <th>Durum</th><th class="num">Gider</th><th class="num">Gelir</th><th class="num">Bakiye</th><th></th>
+            <th class="sortable" data-col="kod">Kod<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="tarih">Tarih<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="aciklama">Açıklama<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="banka">Banka<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="borcTipi">Borç Tipi<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="durum">Durum<span class="sort-arrow"></span></th>
+            <th class="sortable num" data-col="gider">Gider<span class="sort-arrow"></span></th>
+            <th class="sortable num" data-col="gelir">Gelir<span class="sort-arrow"></span></th>
+            <th class="sortable num" data-col="bakiye">Bakiye<span class="sort-arrow"></span></th>
+            <th></th>
+          </tr>
+          <tr class="filter-row">
+            <th></th>
+            <th></th>
+            <th><input type="text" id="filterAciklama" placeholder="Ara..."></th>
+            <th></th>
+            <th>
+              <select id="filterBorcTipi">
+                <option value="__all__">Tümü</option>
+                <option>Gelir</option>
+                <option>Sabit Giderler</option>
+                <option>Kredi</option>
+                <option>Kredi Kartı</option>
+                <option>Şirket Masrafları</option>
+                <option>Bes</option>
+                <option>Elden Ödeme</option>
+              </select>
+            </th>
+            <th>
+              <select id="filterDurum">
+                <option value="__all__">Tümü</option>
+                <option>Bütçe</option>
+                <option>Gerçekleşen</option>
+              </select>
+            </th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
-    <p class="footer-note">İki veritabanı birlikte tutulur: (1) her bankanın kendi sekmesi, kendi bakiyesiyle; (2) "Tüm Kayıtlar (Tarih Bazlı)" sekmesi, tüm bankaları tarih sırasına göre birleştirip genel bakiyeyi hesaplar. Yukarıdaki "Tüm Bankalar" filtresi bu ikinci (tarih bazlı) veritabanını gösterir — eski bir kaydı bulup "Düzenle" ile üzerinde değişiklik yapabilirsiniz.</p>
+    <p class="footer-note">İki veritabanı birlikte tutulur: (1) her bankanın kendi sekmesi, kendi bakiyesiyle; (2) "Tüm Kayıtlar (Tarih Bazlı)" sekmesi, tüm bankaları tarih sırasına göre birleştirip genel bakiyeyi hesaplar. Yukarıdaki "Tüm Bankalar" filtresi bu ikinci (tarih bazlı) veritabanını gösterir — eski bir kaydı bulup "Düzenle" ile üzerinde değişiklik yapabilirsiniz. Başlıklara tıklayarak sıralayabilir, başlık altındaki kutulardan filtreleyebilirsiniz.</p>
+
+    <div class="period-bar">
+      <div class="period-selects">
+        <select id="yearFilter"><option value="__all__">Tüm Yıllar</option></select>
+        <select id="monthFilter">
+          <option value="__all__">Tüm Aylar</option>
+          <option value="01">Ocak</option>
+          <option value="02">Şubat</option>
+          <option value="03">Mart</option>
+          <option value="04">Nisan</option>
+          <option value="05">Mayıs</option>
+          <option value="06">Haziran</option>
+          <option value="07">Temmuz</option>
+          <option value="08">Ağustos</option>
+          <option value="09">Eylül</option>
+          <option value="10">Ekim</option>
+          <option value="11">Kasım</option>
+          <option value="12">Aralık</option>
+        </select>
+      </div>
+      <button class="btn-secondary" id="exportExcelBtn">📊 Excel'e Aktar</button>
+    </div>
+    <div class="summary-cards">
+      <div class="stat gelir"><div class="label">Toplam Gelir</div><div class="value" id="sumGelir">0 ₺</div></div>
+      <div class="stat gider"><div class="label">Toplam Gider</div><div class="value" id="sumGider">0 ₺</div></div>
+      <div class="stat"><div class="label">Genel Bakiye</div><div class="value" id="sumBakiye">0 ₺</div></div>
+    </div>
+    <p class="hint">Toplam Gelir/Gider yukarıdaki filtrelere (banka, yıl, ay, arama) göre hesaplanır. Genel Bakiye, seçili dönemden bağımsız olarak güncel toplam bakiyeyi gösterir.</p>
   </div>
 
   <div class="card">
-    <h2>Grafikler</h2>
+    <div class="charts-header">
+      <h2>Grafikler</h2>
+      <button class="btn-secondary" id="refreshChartsBtn">🔄 Grafikleri Yenile</button>
+    </div>
+    <p class="hint" style="margin-top:-10px;margin-bottom:14px;">Grafikler veri girdikçe otomatik değişmez; güncel görmek için yukarıdaki butona basın.</p>
     <p class="hint" id="chartsErrorHint" style="display:none;color:var(--warn);">⚠️ Grafik kütüphanesi yüklenemedi (internet bağlantınızı kontrol edip sayfayı yenileyin).</p>
     <div class="charts-grid">
-      <div class="chart-box">
-        <h3>Aylık Gelir / Gider</h3>
-        <div class="chart-canvas-wrap"><canvas id="chartMonthly"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <h3>Genel Bakiye Trendi</h3>
+      <div class="chart-box wide">
+        <div class="chart-box-header">
+          <h3>Genel Bakiye Trendi</h3>
+          <div class="chart-filter-selects">
+            <select id="chartYearFilter"><option value="__all__">Tüm Yıllar</option></select>
+            <select id="chartMonthFilter">
+              <option value="__all__">Tüm Aylar</option>
+              <option value="01">Ocak</option>
+              <option value="02">Şubat</option>
+              <option value="03">Mart</option>
+              <option value="04">Nisan</option>
+              <option value="05">Mayıs</option>
+              <option value="06">Haziran</option>
+              <option value="07">Temmuz</option>
+              <option value="08">Ağustos</option>
+              <option value="09">Eylül</option>
+              <option value="10">Ekim</option>
+              <option value="11">Kasım</option>
+              <option value="12">Aralık</option>
+            </select>
+          </div>
+        </div>
         <div class="chart-canvas-wrap"><canvas id="chartBalance"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <h3>Bankalara Göre Güncel Bakiye</h3>
-        <div class="chart-canvas-wrap"><canvas id="chartBankBalance"></canvas></div>
+        <div class="negative-alert" id="negativeAlertBox" style="display:none;"></div>
       </div>
       <div class="chart-box">
         <h3>Borç Tipine Göre Gider Dağılımı</h3>
@@ -319,6 +418,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 /* ---------- Veritabanı bağlantısı (sabit) ---------- */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC-wzKriGof7SLcn9-L0KlJhqYU9EaMD1WaZ6v0a_ADl5kievHicRHLKh15KIOY9Oh/exec';
@@ -327,11 +429,21 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyC-wzKriGof7SLcn9-L0Kl
 let allData = {}; // { "Akbank": [ {kod, tarih, gider, gelir, bakiye, aciklama, borcTipi, durum, limit}, ... ], ... } — banka bazlı veritabanı
 let masterRows = []; // tarih bazlı (cross-bank) veritabanı — tüm bankalar, tarihe göre sıralı, genel bakiye
 let isEditing = false;
+let firstChartsRender = true;
+let sortColumn = 'tarih';
+let sortDirection = 'asc';
 
 const BANKS = ['Akbank','Enpara','Garanti BBVA','İşbank','VakıfBank','Yapı Kredi','Ziraat Bankası','Diğer'];
 
 /* ---------- Elemanlar ---------- */
 const connectionStatusEl = document.getElementById('connectionStatus');
+const filterAciklamaEl = document.getElementById('filterAciklama');
+const filterBorcTipiEl = document.getElementById('filterBorcTipi');
+const filterDurumEl = document.getElementById('filterDurum');
+const yearFilterEl = document.getElementById('yearFilter');
+const monthFilterEl = document.getElementById('monthFilter');
+const chartYearFilterEl = document.getElementById('chartYearFilter');
+const chartMonthFilterEl = document.getElementById('chartMonthFilter');
 
 const bankaEl = document.getElementById('banka');
 const tarihEl = document.getElementById('tarih');
@@ -392,8 +504,13 @@ async function loadAll(){
       allData = json.data;
       masterRows = json.tumKayitlar || [];
       hideConnectionError();
+      populateYearOptions(yearFilterEl);
+      populateYearOptions(chartYearFilterEl);
       renderTable();
-      renderCharts();
+      if(firstChartsRender){
+        renderCharts();
+        firstChartsRender = false;
+      }
     } else {
       showConnectionError('⚠️ Veri okunamadı: ' + (json.error || 'bilinmeyen hata'));
     }
@@ -404,6 +521,47 @@ async function loadAll(){
 
 document.getElementById('refreshBtn').addEventListener('click', loadAll);
 bankFilter.addEventListener('change', renderTable);
+document.getElementById('refreshChartsBtn').addEventListener('click', renderCharts);
+
+filterAciklamaEl.addEventListener('input', renderTable);
+filterBorcTipiEl.addEventListener('change', renderTable);
+filterDurumEl.addEventListener('change', renderTable);
+yearFilterEl.addEventListener('change', renderTable);
+monthFilterEl.addEventListener('change', renderTable);
+chartYearFilterEl.addEventListener('change', renderCharts);
+chartMonthFilterEl.addEventListener('change', renderCharts);
+
+/* ---------- Yıl seçeneklerini doldur ---------- */
+function populateYearOptions(selectEl){
+  const years = new Set();
+  masterRows.forEach(r => {
+    const y = String(r.tarih || '').slice(0, 4);
+    if(y) years.add(y);
+  });
+  const sorted = Array.from(years).sort().reverse();
+  const current = selectEl.value;
+  selectEl.innerHTML = '<option value="__all__">Tüm Yıllar</option>' +
+    sorted.map(y => '<option value="' + y + '">' + y + '</option>').join('');
+  if(sorted.indexOf(current) !== -1 || current === '__all__'){
+    selectEl.value = current;
+  }
+}
+
+/* ---------- Sıralama başlıkları ---------- */
+document.querySelectorAll('th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.getAttribute('data-col');
+    if(sortColumn === col){
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = col;
+      sortDirection = 'asc';
+    }
+    document.querySelectorAll('th.sortable .sort-arrow').forEach(s => s.textContent = '');
+    th.querySelector('.sort-arrow').textContent = sortDirection === 'asc' ? '▲' : '▼';
+    renderTable();
+  });
+});
 
 /* ---------- Tabloyu çiz ---------- */
 // "Tüm Bankalar" seçiliyken tarih bazlı (master) veritabanı kullanılır: tüm
@@ -411,13 +569,45 @@ bankFilter.addEventListener('change', renderTable);
 // Belirli bir banka seçiliyken o bankanın kendi veritabanı (kendi bakiyesiyle) kullanılır.
 function getFilteredRows(){
   const filter = bankFilter.value;
+  let rows;
   if(filter === '__all__'){
-    return masterRows.slice();
+    rows = masterRows.slice();
+  } else {
+    rows = (allData[filter] || [])
+      .slice()
+      .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')))
+      .map(r => Object.assign({}, r, {banka: filter}));
   }
-  return (allData[filter] || [])
-    .slice()
-    .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')))
-    .map(r => Object.assign({}, r, {banka: filter}));
+
+  const aciklamaQuery = trLower(filterAciklamaEl.value || '');
+  if(aciklamaQuery){
+    rows = rows.filter(r => trLower(r.aciklama || '').indexOf(aciklamaQuery) !== -1);
+  }
+  if(filterBorcTipiEl.value !== '__all__'){
+    rows = rows.filter(r => r.borcTipi === filterBorcTipiEl.value);
+  }
+  if(filterDurumEl.value !== '__all__'){
+    rows = rows.filter(r => r.durum === filterDurumEl.value);
+  }
+  if(yearFilterEl.value !== '__all__'){
+    rows = rows.filter(r => String(r.tarih || '').slice(0, 4) === yearFilterEl.value);
+  }
+  if(monthFilterEl.value !== '__all__'){
+    rows = rows.filter(r => String(r.tarih || '').slice(5, 7) === monthFilterEl.value);
+  }
+
+  rows.sort((a, b) => {
+    let av = a[sortColumn], bv = b[sortColumn];
+    let cmp;
+    if(['gider','gelir','bakiye'].indexOf(sortColumn) !== -1){
+      cmp = (Number(av) || 0) - (Number(bv) || 0);
+    } else {
+      cmp = String(av || '').localeCompare(String(bv || ''), 'tr');
+    }
+    return sortDirection === 'asc' ? cmp : -cmp;
+  });
+
+  return rows;
 }
 
 function renderTable(){
@@ -455,16 +645,26 @@ function renderTable(){
     viewHint.textContent = 'Banka bazlı veritabanı görünümü: yalnızca ' + bankFilter.value + ' sekmesi, o bankaya özel bakiye ile.';
   }
 
+  // Toplam Gelir/Gider: geçerli tüm filtrelere göre (banka, arama, yıl, ay, borç tipi, durum)
   let totalGelir = 0, totalGider = 0;
-  BANKS.forEach(bank => {
-    (allData[bank] || []).forEach(r => {
-      totalGelir += Number(r.gelir) || 0;
-      totalGider += Number(r.gider) || 0;
-    });
+  rows.forEach(r => {
+    totalGelir += Number(r.gelir) || 0;
+    totalGider += Number(r.gider) || 0;
   });
   document.getElementById('sumGelir').textContent = fmt(totalGelir);
   document.getElementById('sumGider').textContent = fmt(totalGider);
-  document.getElementById('sumBakiye').textContent = fmt(totalGelir - totalGider);
+
+  // Genel Bakiye: filtrelerden bağımsız, güncel gerçek toplam bakiye (tüm bankalar, tüm zamanlar)
+  let genelBakiye = 0;
+  if(masterRows.length > 0){
+    genelBakiye = Number(masterRows[masterRows.length - 1].bakiye) || 0;
+  } else {
+    BANKS.forEach(bank => {
+      const bankRows = allData[bank] || [];
+      if(bankRows.length > 0){ genelBakiye += Number(bankRows[bankRows.length - 1].bakiye) || 0; }
+    });
+  }
+  document.getElementById('sumBakiye').textContent = fmt(genelBakiye);
 }
 
 function escapeHtml(s){
@@ -473,7 +673,9 @@ function escapeHtml(s){
 }
 
 /* ---------- Grafikler ---------- */
-let chartMonthly, chartBalance, chartBankBalance, chartCategory;
+let chartBalance, chartCategory;
+const NEGATIVE_COLOR = '#dc2626';
+const POSITIVE_COLOR = '#2f6feb';
 
 function destroyChart(c){ if(c){ c.destroy(); } }
 
@@ -493,52 +695,70 @@ function renderCharts(){
   }
 }
 
-function renderChartsInner(){
-  // Aylık Gelir / Gider
-  const monthlyMap = {};
-  masterRows.forEach(r => {
-    const month = (r.tarih || '').slice(0, 7);
-    if(!month) return;
-    if(!monthlyMap[month]) monthlyMap[month] = { gelir: 0, gider: 0 };
-    monthlyMap[month].gelir += Number(r.gelir) || 0;
-    monthlyMap[month].gider += Number(r.gider) || 0;
-  });
-  const months = Object.keys(monthlyMap).sort();
-  destroyChart(chartMonthly);
-  chartMonthly = new Chart(document.getElementById('chartMonthly'), {
-    type: 'bar',
-    data: {
-      labels: months,
-      datasets: [
-        { label: 'Gelir', data: months.map(m => monthlyMap[m].gelir), backgroundColor: '#16a34a' },
-        { label: 'Gider', data: months.map(m => monthlyMap[m].gider), backgroundColor: '#dc2626' }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10.5 } } } }, scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 10 } } } } }
-  });
+/* Genel Bakiye Trendi grafiğine uygulanan yıl/ay filtresi (bu grafiğe özeldir) */
+function getBalanceChartRows(){
+  let rows = masterRows.slice();
+  if(chartYearFilterEl.value !== '__all__'){
+    rows = rows.filter(r => String(r.tarih || '').slice(0, 4) === chartYearFilterEl.value);
+  }
+  if(chartMonthFilterEl.value !== '__all__'){
+    rows = rows.filter(r => String(r.tarih || '').slice(5, 7) === chartMonthFilterEl.value);
+  }
+  return rows;
+}
 
-  // Genel Bakiye Trendi
+function renderBalanceChart(){
+  const rows = getBalanceChartRows();
+  const labels = rows.map(r => r.tarih);
+  const data = rows.map(r => Number(r.bakiye) || 0);
+
   destroyChart(chartBalance);
   chartBalance = new Chart(document.getElementById('chartBalance'), {
     type: 'line',
     data: {
-      labels: masterRows.map(r => r.tarih),
-      datasets: [{ label: 'Genel Bakiye', data: masterRows.map(r => Number(r.bakiye) || 0), borderColor: '#2f6feb', backgroundColor: 'rgba(47,111,235,0.12)', fill: true, tension: 0.25, pointRadius: 0 }]
+      labels,
+      datasets: [{
+        label: 'Genel Bakiye',
+        data,
+        borderColor: POSITIVE_COLOR,
+        backgroundColor: 'rgba(47,111,235,0.12)',
+        segment: {
+          borderColor: ctx => (ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0) ? NEGATIVE_COLOR : POSITIVE_COLOR,
+          backgroundColor: ctx => (ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0) ? 'rgba(220,38,38,0.15)' : 'rgba(47,111,235,0.12)'
+        },
+        pointBackgroundColor: data.map(v => v < 0 ? NEGATIVE_COLOR : POSITIVE_COLOR),
+        fill: 'origin',
+        tension: 0.25,
+        pointRadius: 0
+      }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6, font: { size: 10 } } } } }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+        y: { grid: { color: ctx => ctx.tick.value === 0 ? '#9ca3af' : '#e5e7eb' } }
+      }
+    }
   });
 
-  // Bankalara Göre Güncel Bakiye
-  const bankBalances = BANKS.map(b => {
-    const rows = allData[b] || [];
-    return rows.length ? (Number(rows[rows.length - 1].bakiye) || 0) : 0;
+  // En düşük (en negatif) bakiye noktasını bul
+  const alertBox = document.getElementById('negativeAlertBox');
+  let minVal = 0, minRow = null;
+  rows.forEach(r => {
+    const v = Number(r.bakiye) || 0;
+    if(v < minVal){ minVal = v; minRow = r; }
   });
-  destroyChart(chartBankBalance);
-  chartBankBalance = new Chart(document.getElementById('chartBankBalance'), {
-    type: 'bar',
-    data: { labels: BANKS, datasets: [{ label: 'Güncel Bakiye', data: bankBalances, backgroundColor: '#2f6feb' }] },
-    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10.5 } } } } }
-  });
+  if(minRow){
+    alertBox.style.display = 'flex';
+    alertBox.innerHTML = '⚠️ Seçili dönemde en düşük bakiyeye düşülen an: <span><strong>' + fmt(minVal) + '</strong> — ' + (minRow.tarih || '') + (minRow.aciklama ? ' (' + escapeHtml(minRow.aciklama) + ')' : '') + '</span>';
+  } else {
+    alertBox.style.display = 'none';
+  }
+}
+
+function renderChartsInner(){
+  renderBalanceChart();
 
   // Borç Tipine Göre Gider Dağılımı
   const categoryTotals = {};
@@ -683,20 +903,39 @@ document.getElementById('entryForm').addEventListener('submit', async function(e
   }
 });
 
-/* ---------- CSV dışa aktarım ---------- */
-document.getElementById('exportBtn').addEventListener('click', () => {
+/* ---------- Excel'e dışa aktarım ---------- */
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+  if(typeof XLSX === 'undefined'){
+    alert('Excel kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.');
+    return;
+  }
   const rows = getFilteredRows();
   if(rows.length === 0){ alert('Dışa aktarılacak kayıt yok.'); return; }
-  const headers = ['Kod','Ödeme Tarihi','Gider','Gelir','Bakiye','Açıklama','Banka','Borç Tipi','Gerçekleşme Durumu','Limit'];
-  const csvRows = rows.map(e => [e.kod, e.tarih, e.gider||'', e.gelir||'', e.bakiye, e.aciklama, e.banka, e.borcTipi, e.durum, e.limit||'']);
-  let csv = headers.join(';') + '\n' + csvRows.map(r => r.join(';')).join('\n');
-  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'butce_kayitlari.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+
+  const data = rows.map(e => ({
+    'Kod': e.kod,
+    'Ödeme Tarihi': e.tarih || '',
+    'Gider': e.gider || '',
+    'Gelir': e.gelir || '',
+    'Bakiye': e.bakiye,
+    'Açıklama': e.aciklama || '',
+    'Banka': e.banka || '',
+    'Borç Tipi': e.borcTipi || '',
+    'Gerçekleşme Durumu': e.durum || '',
+    'Limit': e.limit || ''
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:10},{wch:12},{wch:12},{wch:12},{wch:12},{wch:28},{wch:14},{wch:16},{wch:16},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kayıtlar');
+
+  const parts = [];
+  if(bankFilter.value !== '__all__') parts.push(bankFilter.value);
+  if(yearFilterEl.value !== '__all__') parts.push(yearFilterEl.value);
+  if(monthFilterEl.value !== '__all__') parts.push(monthFilterEl.value);
+  const suffix = parts.length ? '_' + parts.join('_').replace(/\s+/g, '') : '';
+  XLSX.writeFile(wb, 'butce_kayitlari' + suffix + '.xlsx');
 });
 
 /* ================= Toplu Excel İçe Aktarımı ================= */
@@ -923,7 +1162,6 @@ confirmBulkBtn.addEventListener('click', async () => {
 
 /* ---------- Başlangıç ---------- */
 renderTable();
-renderCharts();
 loadAll();
 </script>
 </body>
