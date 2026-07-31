@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bütçe Veri Giriş Formu</title>
+<style>
+  :root{
+    --bg:#f4f6f9;
+    --card:#ffffff;
+    --primary:#2f6feb;
+    --primary-dark:#1f4fbb;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --gelir:#16a34a;
+    --gider:#dc2626;
+    --warn:#b45309;
+    --warn-bg:#fffbeb;
+    --warn-border:#fde68a;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:24px;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .subtitle{color:var(--muted);font-size:14px;margin:0 0 16px;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom:24px;
+  }
+  .card h2{font-size:15px;margin:0 0 16px;color:var(--text);}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:#374151;}
+  label:first-of-type{margin-top:0;}
+  input, select{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-size:16px;
+    background:#fff;
+    color:var(--text);
+  }
+  input:focus, select:focus{outline:2px solid var(--primary);outline-offset:1px;border-color:var(--primary);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .type-toggle{display:flex;gap:8px;margin-top:6px;}
+  .type-toggle button{
+    flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);
+    background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);
+  }
+  .type-toggle button.active-gider{background:#fee2e2;border-color:var(--gider);color:var(--gider);}
+  .type-toggle button.active-gelir{background:#dcfce7;border-color:var(--gelir);color:var(--gelir);}
+  .balance-box{
+    margin-top:16px;padding:12px 14px;background:#f9fafb;border-radius:8px;
+    display:flex;justify-content:space-between;font-size:13px;color:var(--muted);
+  }
+  .balance-box strong{color:var(--text);font-size:15px;}
+  .submit-btn{
+    margin-top:20px;width:100%;padding:13px;border:none;border-radius:8px;
+    background:var(--primary);color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+  }
+  .submit-btn:hover{background:var(--primary-dark);}
+  .submit-btn:disabled{background:#9ca3af;cursor:not-allowed;}
+  .cancel-btn{
+    margin-top:8px;width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;
+    background:#fff;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .hint{font-size:12px;color:var(--muted);margin-top:4px;}
+  .summary-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;}
+  .stat .label{font-size:12px;color:var(--muted);margin-bottom:4px;}
+  .stat .value{font-size:16px;font-weight:700;}
+  .stat.gelir .value{color:var(--gelir);}
+  .stat.gider .value{color:var(--gider);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th, td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;}
+  th{color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .gelir-text{color:var(--gelir);}
+  .gider-text{color:var(--gider);}
+  .table-wrap{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;}
+  .top-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+  .btn-secondary{
+    padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;
+    font-size:13.5px;cursor:pointer;color:var(--text);font-weight:500;
+  }
+  .btn-secondary:hover{background:#f3f4f6;}
+  .btn-danger{color:var(--gider);border-color:#fecaca;}
+  .empty-state{padding:40px 10px;text-align:center;color:var(--muted);font-size:13px;}
+  .edit-btn, .del-btn{background:none;border:none;cursor:pointer;font-size:13px;margin-right:6px;}
+  .edit-btn{color:var(--primary);}
+  .edit-btn:hover{text-decoration:underline;}
+  .del-btn{color:var(--muted);}
+  .del-btn:hover{color:var(--gider);}
+  .footer-note{margin-top:18px;font-size:12px;color:var(--muted);line-height:1.5;}
+  .filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .filter-bar select{width:auto;min-width:150px;}
+  .settings{margin-bottom:18px;border:1px solid var(--warn-border);background:var(--warn-bg);border-radius:8px;padding:14px 16px;}
+  .settings.connected{border-color:#bbf7d0;background:#f0fdf4;}
+  .settings-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .settings input{flex:1;font-size:13px;min-width:200px;}
+  .settings .label-row{font-size:13px;font-weight:600;color:var(--warn);margin-bottom:8px;}
+  .settings.connected .label-row{color:#15803d;}
+  .status-msg{font-size:12px;margin-top:8px;color:var(--muted);}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eef2ff;color:var(--primary);}
+  .editing-banner{background:#eef2ff;border:1px solid #c7d2fe;color:var(--primary-dark);font-size:12.5px;padding:8px 12px;border-radius:8px;margin-bottom:12px;}
+
+  .bulk-trigger-wrap{margin-bottom:18px;}
+  .bulk-trigger-wrap button{width:100%;padding:12px;font-size:14px;}
+
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:700px){.charts-grid{grid-template-columns:1fr;}}
+  .chart-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .chart-box h3{font-size:13px;margin:0 0 10px;color:var(--text);font-weight:600;}
+  .chart-canvas-wrap{position:relative;height:230px;}
+
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);
+    align-items:flex-start;justify-content:center;padding:24px 14px;z-index:1000;overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff;border-radius:12px;max-width:720px;width:100%;padding:22px 22px 20px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.25);
+  }
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .modal-header h2{font-size:16px;margin:0;}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1;padding:4px;}
+  .modal-close:hover{color:var(--text);}
+  #bulkTextarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-top:10px;resize:vertical;}
+  .modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .modal-actions .submit-btn{margin-top:0;width:auto;padding:10px 18px;}
+  #bulkPreviewArea{margin-top:14px;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px;}
+  #bulkPreviewArea table{font-size:11.5px;}
+  code{background:#f3f4f6;padding:1px 5px;border-radius:4px;font-size:11.5px;}
+
+  @media (max-width:480px){
+    body{padding:14px;}
+    .row2{grid-template-columns:1fr;}
+    .summary-cards{grid-template-columns:1fr 1fr;}
+    .top-actions{flex-direction:column;align-items:stretch;}
+    h1{font-size:19px;}
+    .card{padding:16px;}
+    .modal-box{padding:16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bütçe Veri Giriş Formu</h1>
+  <p class="subtitle">Banka bazlı Google Sheets veritabanına bağlı. Kayıtlar eklenir, düzenlenir ve silinir; her kayda sistem otomatik tekil kod atar. Telefondan da kullanılabilir.</p>
+
+  <div class="settings" id="settingsBox">
+    <div class="label-row" id="settingsLabel">⚙️ Google Sheets bağlantısı</div>
+    <div class="settings-row">
+      <input type="text" id="apiUrl" placeholder="Apps Script Web App URL'sini buraya yapıştırın (https://script.google.com/macros/s/.../exec)">
+      <button class="btn-secondary" id="saveUrlBtn">Kaydet</button>
+      <button class="btn-secondary" id="testUrlBtn">Bağlantıyı Test Et</button>
+    </div>
+    <div class="status-msg" id="settingsStatus">Henüz bir Web App URL'si girilmedi. Kurulum adımları için "Kurulum_Talimatlari.md" dosyasına bakın.</div>
+  </div>
+
+  <div class="bulk-trigger-wrap">
+    <button class="btn-secondary" id="openBulkImportBtn">📥 Excel'den Toplu Veri Aktar (bir kerelik)</button>
+  </div>
+
+  <div class="card">
+    <h2 id="formTitle">Yeni Kayıt Ekle</h2>
+    <div class="editing-banner" id="editingBanner" style="display:none;">
+      Düzenleniyor: <strong id="editingKod"></strong> — değişiklikleri kaydetmek için "Kaydı Güncelle"ye basın.
+    </div>
+    <form id="entryForm">
+      <label for="banka">Banka</label>
+      <select id="banka">
+        <option>Akbank</option>
+        <option>Enpara</option>
+        <option>Garanti BBVA</option>
+        <option>İşbank</option>
+        <option>VakıfBank</option>
+        <option>Yapı Kredi</option>
+        <option>Ziraat Bankası</option>
+        <option selected>Diğer</option>
+      </select>
+
+      <label for="tarih">Ödeme Tarihi</label>
+      <input type="date" id="tarih" required>
+
+      <label>İşlem Tipi</label>
+      <div class="type-toggle">
+        <button type="button" id="btnGider" class="active-gider">Gider</button>
+        <button type="button" id="btnGelir">Gelir</button>
+      </div>
+      <input type="hidden" id="islemTipi" value="Gider">
+
+      <label for="tutar">Tutar (₺)</label>
+      <input type="number" id="tutar" step="0.01" min="0" placeholder="0.00" required>
+
+      <label for="aciklama">Açıklama</label>
+      <input type="text" id="aciklama" placeholder="Örn: Ev Kredisi, Maaş, Elektrik..." required>
+
+      <div class="row2">
+        <div>
+          <label for="borcTipi">Borç Tipi</label>
+          <select id="borcTipi">
+            <option>Gelir</option>
+            <option selected>Sabit Giderler</option>
+            <option>Kredi</option>
+            <option>Kredi Kartı</option>
+            <option>Şirket Masrafları</option>
+            <option>Bes</option>
+            <option>Elden Ödeme</option>
+          </select>
+        </div>
+        <div>
+          <label for="durum">Gerçekleşme Durumu</label>
+          <select id="durum">
+            <option selected>Bütçe</option>
+            <option>Gerçekleşen</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="limitWrap" style="display:none;">
+        <label for="limit">Limit (₺)</label>
+        <input type="number" id="limit" step="0.01" min="0" placeholder="Kredi kartı limiti">
+      </div>
+
+      <input type="hidden" id="kod" value="">
+      <input type="hidden" id="eskiBanka" value="">
+
+      <button type="submit" class="submit-btn" id="submitBtn">Kaydı Ekle</button>
+      <button type="button" class="cancel-btn" id="cancelEditBtn" style="display:none;">Düzenlemeyi İptal Et</button>
+      <p class="hint">Bakiye ve kod otomatik hesaplanır/atanır; elle değiştirilemez. Kayıtlar seçili bankanın kendi sekmesine göre sıralı bakiye üretir, bu yüzden kayıtları tarih sırasına göre girmeniz önerilir.</p>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Kayıtlar</h2>
+    <div class="summary-cards">
+      <div class="stat gelir"><div class="label">Toplam Gelir</div><div class="value" id="sumGelir">0 ₺</div></div>
+      <div class="stat gider"><div class="label">Toplam Gider</div><div class="value" id="sumGider">0 ₺</div></div>
+      <div class="stat"><div class="label">Genel Bakiye</div><div class="value" id="sumBakiye">0 ₺</div></div>
+    </div>
+
+    <div class="top-actions">
+      <div class="filter-bar">
+        <select id="bankFilter">
+          <option value="__all__">Tüm Bankalar</option>
+          <option>Akbank</option>
+          <option>Enpara</option>
+          <option>Garanti BBVA</option>
+          <option>İşbank</option>
+          <option>VakıfBank</option>
+          <option>Yapı Kredi</option>
+          <option>Ziraat Bankası</option>
+          <option>Diğer</option>
+        </select>
+        <span style="font-size:12.5px;color:var(--muted);"><span id="rowCount">0</span> kayıt</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" id="refreshBtn">Yenile</button>
+        <button class="btn-secondary" id="exportBtn">CSV Dışa Aktar</button>
+      </div>
+    </div>
+    <p class="hint" id="viewModeHint" style="margin-top:-6px;margin-bottom:10px;">Tarih bazlı veritabanı görünümü: tüm bankalar, tarih sırasına göre, genel bakiye ile.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Kod</th><th>Tarih</th><th>Açıklama</th><th>Banka</th><th>Borç Tipi</th>
+            <th>Durum</th><th class="num">Gider</th><th class="num">Gelir</th><th class="num">Bakiye</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <p class="footer-note">İki veritabanı birlikte tutulur: (1) her bankanın kendi sekmesi, kendi bakiyesiyle; (2) "Tüm Kayıtlar (Tarih Bazlı)" sekmesi, tüm bankaları tarih sırasına göre birleştirip genel bakiyeyi hesaplar. Yukarıdaki "Tüm Bankalar" filtresi bu ikinci (tarih bazlı) veritabanını gösterir — eski bir kaydı bulup "Düzenle" ile üzerinde değişiklik yapabilirsiniz.</p>
+  </div>
+
+  <div class="card">
+    <h2>Grafikler</h2>
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Aylık Gelir / Gider</h3>
+        <div class="chart-canvas-wrap"><canvas id="chartMonthly"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Genel Bakiye Trendi</h3>
+        <div class="chart-canvas-wrap"><canvas id="chartBalance"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Bankalara Göre Güncel Bakiye</h3>
+        <div class="chart-canvas-wrap"><canvas id="chartBankBalance"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Borç Tipine Göre Gider Dağılımı</h3>
+        <div class="chart-canvas-wrap"><canvas id="chartCategory"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkModalOverlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Excel'den Toplu Veri Aktarımı</h2>
+      <button class="modal-close" id="closeBulkModalBtn">✕</button>
+    </div>
+    <p class="hint">Excel'de şu sütun sırasıyla (başlık satırı dahil) bir aralık seçip kopyalayın, sonra aşağıya yapıştırın:</p>
+    <p class="hint"><code>Ödeme Tarihi &nbsp; Gider &nbsp; Gelir &nbsp; Açıklama &nbsp; Banka &nbsp; Borç Tipi &nbsp; Gerçekleşme Durumu &nbsp; Limit</code></p>
+    <p class="hint">Sütun sırası önemli değil, başlık isimleri tanınabildiği sürece eşleştirilir. "Bakiye" ve "Kod" sütunları varsa yok sayılır (otomatik hesaplanır).</p>
+    <textarea id="bulkTextarea" rows="8" placeholder="Excel'den kopyaladığınız verileri buraya yapıştırın (Ctrl+V)..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="previewBulkBtn">Verileri Önizle</button>
+      <button class="submit-btn" id="confirmBulkBtn" style="display:none;" disabled>İçe Aktar</button>
+    </div>
+    <div id="bulkPreviewArea"></div>
+    <div class="status-msg" id="bulkStatus"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+/* ---------- Güvenli depolama (sandbox ortamlarında localStorage engellenebilir, bu yüzden try/catch ile bellek fallback kullanılır) ---------- */
+const memoryStore = {};
+function safeGet(key){
+  try { return localStorage.getItem(key); } catch(e){ return memoryStore[key] !== undefined ? memoryStore[key] : null; }
+}
+function safeSet(key, value){
+  try { localStorage.setItem(key, value); } catch(e){ memoryStore[key] = value; }
+}
+
+/* ---------- Durum ---------- */
+let API_URL = safeGet('butce_api_url') || '';
+let allData = {}; // { "Akbank": [ {kod, tarih, gider, gelir, bakiye, aciklama, borcTipi, durum, limit}, ... ], ... } — banka bazlı veritabanı
+let masterRows = []; // tarih bazlı (cross-bank) veritabanı — tüm bankalar, tarihe göre sıralı, genel bakiye
+let isEditing = false;
+
+const BANKS = ['Akbank','Enpara','Garanti BBVA','İşbank','VakıfBank','Yapı Kredi','Ziraat Bankası','Diğer'];
+
+/* ---------- Elemanlar ---------- */
+const apiUrlEl = document.getElementById('apiUrl');
+const settingsBox = document.getElementById('settingsBox');
+const settingsLabel = document.getElementById('settingsLabel');
+const settingsStatus = document.getElementById('settingsStatus');
+
+const bankaEl = document.getElementById('banka');
+const tarihEl = document.getElementById('tarih');
+const tutarEl = document.getElementById('tutar');
+const aciklamaEl = document.getElementById('aciklama');
+const borcTipiEl = document.getElementById('borcTipi');
+const durumEl = document.getElementById('durum');
+const limitEl = document.getElementById('limit');
+const limitWrap = document.getElementById('limitWrap');
+const islemTipiEl = document.getElementById('islemTipi');
+const kodEl = document.getElementById('kod');
+const eskiBankaEl = document.getElementById('eskiBanka');
+const btnGider = document.getElementById('btnGider');
+const btnGelir = document.getElementById('btnGelir');
+const submitBtn = document.getElementById('submitBtn');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const formTitle = document.getElementById('formTitle');
+const editingBanner = document.getElementById('editingBanner');
+const editingKodEl = document.getElementById('editingKod');
+const bankFilter = document.getElementById('bankFilter');
+
+tarihEl.valueAsDate = new Date();
+apiUrlEl.value = API_URL;
+refreshSettingsUI();
+
+function fmt(n){
+  n = Number(n) || 0;
+  return (Math.round(n*100)/100).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₺';
+}
+
+function refreshSettingsUI(){
+  if(API_URL){
+    settingsBox.classList.add('connected');
+    settingsLabel.textContent = '✅ Google Sheets bağlantısı ayarlı';
+    settingsStatus.textContent = API_URL;
+  } else {
+    settingsBox.classList.remove('connected');
+    settingsLabel.textContent = '⚙️ Google Sheets bağlantısı';
+    settingsStatus.textContent = 'Henüz bir Web App URL\'si girilmedi. Kurulum adımları için "Kurulum_Talimatlari.md" dosyasına bakın.';
+  }
+}
+
+document.getElementById('saveUrlBtn').addEventListener('click', () => {
+  API_URL = apiUrlEl.value.trim();
+  safeSet('butce_api_url', API_URL);
+  refreshSettingsUI();
+  if(API_URL){ loadAll(); }
+});
+
+document.getElementById('testUrlBtn').addEventListener('click', async () => {
+  const url = apiUrlEl.value.trim();
+  if(!url){ alert('Önce bir URL girin.'); return; }
+  settingsStatus.textContent = 'Bağlantı test ediliyor...';
+  try {
+    const res = await fetch(url + '?t=' + Date.now());
+    const json = await res.json();
+    if(json.ok){
+      settingsStatus.textContent = '✅ Bağlantı başarılı, veriler okunabiliyor.';
+    } else {
+      settingsStatus.textContent = '⚠️ Bağlantı kuruldu ama beklenmeyen yanıt: ' + JSON.stringify(json);
+    }
+  } catch(err){
+    settingsStatus.textContent = '❌ Bağlantı hatası: ' + err.message + ' (Web App erişiminin "Herkes" olarak ayarlandığından emin olun.)';
+  }
+});
+
+/* ---------- İşlem tipi / limit görünürlüğü ---------- */
+btnGider.addEventListener('click', () => {
+  islemTipiEl.value = 'Gider';
+  btnGider.classList.add('active-gider');
+  btnGelir.classList.remove('active-gelir');
+});
+btnGelir.addEventListener('click', () => {
+  islemTipiEl.value = 'Gelir';
+  btnGelir.classList.add('active-gelir');
+  btnGider.classList.remove('active-gider');
+});
+borcTipiEl.addEventListener('change', () => {
+  limitWrap.style.display = borcTipiEl.value === 'Kredi Kartı' ? 'block' : 'none';
+});
+
+/* ---------- Veri çekme ---------- */
+async function loadAll(){
+  if(!API_URL){ return; }
+  settingsStatus.textContent = 'Yükleniyor...';
+  try {
+    const res = await fetch(API_URL + '?t=' + Date.now());
+    const json = await res.json();
+    if(json.ok){
+      allData = json.data;
+      masterRows = json.tumKayitlar || [];
+      refreshSettingsUI();
+      renderTable();
+      renderCharts();
+    } else {
+      settingsStatus.textContent = '⚠️ Veri okunamadı: ' + (json.error || 'bilinmeyen hata');
+    }
+  } catch(err){
+    settingsStatus.textContent = '❌ Veri çekilemedi: ' + err.message;
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadAll);
+bankFilter.addEventListener('change', renderTable);
+
+/* ---------- Tabloyu çiz ---------- */
+// "Tüm Bankalar" seçiliyken tarih bazlı (master) veritabanı kullanılır: tüm
+// bankalardaki kayıtlar tarihe göre sıralı ve genel (cross-bank) bakiye ile.
+// Belirli bir banka seçiliyken o bankanın kendi veritabanı (kendi bakiyesiyle) kullanılır.
+function getFilteredRows(){
+  const filter = bankFilter.value;
+  if(filter === '__all__'){
+    return masterRows.slice();
+  }
+  return (allData[filter] || [])
+    .slice()
+    .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')))
+    .map(r => Object.assign({}, r, {banka: filter}));
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tableBody');
+  const rows = getFilteredRows();
+
+  if(rows.length === 0){
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">Henüz kayıt yok.</div></td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(e => `
+      <tr>
+        <td><span class="badge">${e.kod}</span></td>
+        <td>${e.tarih || ''}</td>
+        <td>${escapeHtml(e.aciklama)}</td>
+        <td>${e.banka}</td>
+        <td>${e.borcTipi || ''}</td>
+        <td>${e.durum || ''}</td>
+        <td class="num gider-text">${e.gider ? fmt(e.gider) : ''}</td>
+        <td class="num gelir-text">${e.gelir ? fmt(e.gelir) : ''}</td>
+        <td class="num">${fmt(e.bakiye)}</td>
+        <td>
+          <button class="edit-btn" onclick="startEdit('${e.banka}','${e.kod}')">Düzenle</button>
+          <button class="del-btn" onclick="deleteEntry('${e.banka}','${e.kod}')">Sil</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('rowCount').textContent = rows.length;
+
+  const viewHint = document.getElementById('viewModeHint');
+  if(bankFilter.value === '__all__'){
+    viewHint.textContent = 'Tarih bazlı veritabanı görünümü: tüm bankalar, tarih sırasına göre, genel bakiye ile.';
+  } else {
+    viewHint.textContent = 'Banka bazlı veritabanı görünümü: yalnızca ' + bankFilter.value + ' sekmesi, o bankaya özel bakiye ile.';
+  }
+
+  let totalGelir = 0, totalGider = 0;
+  BANKS.forEach(bank => {
+    (allData[bank] || []).forEach(r => {
+      totalGelir += Number(r.gelir) || 0;
+      totalGider += Number(r.gider) || 0;
+    });
+  });
+  document.getElementById('sumGelir').textContent = fmt(totalGelir);
+  document.getElementById('sumGider').textContent = fmt(totalGider);
+  document.getElementById('sumBakiye').textContent = fmt(totalGelir - totalGider);
+}
+
+function escapeHtml(s){
+  if(s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- Grafikler ---------- */
+let chartMonthly, chartBalance, chartBankBalance, chartCategory;
+
+function destroyChart(c){ if(c){ c.destroy(); } }
+
+function renderCharts(){
+  if(typeof Chart === 'undefined') return;
+
+  // Aylık Gelir / Gider
+  const monthlyMap = {};
+  masterRows.forEach(r => {
+    const month = (r.tarih || '').slice(0, 7);
+    if(!month) return;
+    if(!monthlyMap[month]) monthlyMap[month] = { gelir: 0, gider: 0 };
+    monthlyMap[month].gelir += Number(r.gelir) || 0;
+    monthlyMap[month].gider += Number(r.gider) || 0;
+  });
+  const months = Object.keys(monthlyMap).sort();
+  destroyChart(chartMonthly);
+  chartMonthly = new Chart(document.getElementById('chartMonthly'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Gelir', data: months.map(m => monthlyMap[m].gelir), backgroundColor: '#16a34a' },
+        { label: 'Gider', data: months.map(m => monthlyMap[m].gider), backgroundColor: '#dc2626' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10.5 } } } }, scales: { y: { beginAtZero: true }, x: { ticks: { font: { size: 10 } } } } }
+  });
+
+  // Genel Bakiye Trendi
+  destroyChart(chartBalance);
+  chartBalance = new Chart(document.getElementById('chartBalance'), {
+    type: 'line',
+    data: {
+      labels: masterRows.map(r => r.tarih),
+      datasets: [{ label: 'Genel Bakiye', data: masterRows.map(r => Number(r.bakiye) || 0), borderColor: '#2f6feb', backgroundColor: 'rgba(47,111,235,0.12)', fill: true, tension: 0.25, pointRadius: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6, font: { size: 10 } } } } }
+  });
+
+  // Bankalara Göre Güncel Bakiye
+  const bankBalances = BANKS.map(b => {
+    const rows = allData[b] || [];
+    return rows.length ? (Number(rows[rows.length - 1].bakiye) || 0) : 0;
+  });
+  destroyChart(chartBankBalance);
+  chartBankBalance = new Chart(document.getElementById('chartBankBalance'), {
+    type: 'bar',
+    data: { labels: BANKS, datasets: [{ label: 'Güncel Bakiye', data: bankBalances, backgroundColor: '#2f6feb' }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10.5 } } } } }
+  });
+
+  // Borç Tipine Göre Gider Dağılımı
+  const categoryTotals = {};
+  masterRows.forEach(r => {
+    const cat = r.borcTipi || 'Diğer';
+    if(cat === 'Gelir') return;
+    categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(r.gider) || 0);
+  });
+  const catLabels = Object.keys(categoryTotals).filter(k => categoryTotals[k] > 0);
+  destroyChart(chartCategory);
+  chartCategory = new Chart(document.getElementById('chartCategory'), {
+    type: 'doughnut',
+    data: { labels: catLabels, datasets: [{ data: catLabels.map(k => categoryTotals[k]), backgroundColor: ['#dc2626', '#f97316', '#eab308', '#16a34a', '#0ea5e9', '#8b5cf6', '#ec4899', '#6b7280'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+  });
+}
+
+/* ---------- Düzenleme akışı ---------- */
+function startEdit(banka, kod){
+  const record = (allData[banka] || []).find(r => String(r.kod) === String(kod));
+  if(!record) return;
+
+  isEditing = true;
+  kodEl.value = record.kod;
+  eskiBankaEl.value = banka;
+  bankaEl.value = banka;
+  tarihEl.value = record.tarih;
+  aciklamaEl.value = record.aciklama;
+  borcTipiEl.value = record.borcTipi;
+  durumEl.value = record.durum;
+  limitEl.value = record.limit || '';
+  limitWrap.style.display = record.borcTipi === 'Kredi Kartı' ? 'block' : 'none';
+
+  const isGelir = Number(record.gelir) > 0;
+  tutarEl.value = isGelir ? record.gelir : record.gider;
+  islemTipiEl.value = isGelir ? 'Gelir' : 'Gider';
+  if(isGelir){
+    btnGelir.classList.add('active-gelir'); btnGider.classList.remove('active-gider');
+  } else {
+    btnGider.classList.add('active-gider'); btnGelir.classList.remove('active-gelir');
+  }
+
+  formTitle.textContent = 'Kaydı Düzenle';
+  editingBanner.style.display = 'block';
+  editingKodEl.textContent = record.kod;
+  submitBtn.textContent = 'Kaydı Güncelle';
+  cancelEditBtn.style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetForm(){
+  isEditing = false;
+  kodEl.value = '';
+  eskiBankaEl.value = '';
+  document.getElementById('entryForm').reset();
+  tarihEl.valueAsDate = new Date();
+  islemTipiEl.value = 'Gider';
+  btnGider.classList.add('active-gider');
+  btnGelir.classList.remove('active-gelir');
+  limitWrap.style.display = 'none';
+  formTitle.textContent = 'Yeni Kayıt Ekle';
+  editingBanner.style.display = 'none';
+  submitBtn.textContent = 'Kaydı Ekle';
+  cancelEditBtn.style.display = 'none';
+}
+
+cancelEditBtn.addEventListener('click', resetForm);
+
+/* ---------- API çağrıları ---------- */
+async function apiPost(payload){
+  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
+  return res.json();
+}
+
+async function deleteEntry(banka, kod){
+  if(!API_URL){ alert('Önce Google Sheets bağlantısını ayarlayın.'); return; }
+  if(!confirm(kod + ' kodlu kaydı silmek istediğinize emin misiniz?')) return;
+  submitBtn.disabled = true;
+  try {
+    const json = await apiPost({action:'delete', banka: banka, kod: kod});
+    if(json.ok){ await loadAll(); if(kodEl.value === kod){ resetForm(); } }
+    else { alert('Silinemedi: ' + json.error); }
+  } catch(err){
+    alert('Silme hatası: ' + err.message);
+  }
+  submitBtn.disabled = false;
+}
+
+/* ---------- Form gönderimi ---------- */
+document.getElementById('entryForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  if(!API_URL){ alert('Önce üstteki alandan Google Sheets Web App URL\'sini kaydedin.'); return; }
+
+  const tutar = parseFloat(tutarEl.value);
+  if(!tutar || tutar <= 0){ return; }
+  const isGelir = islemTipiEl.value === 'Gelir';
+
+  const payload = {
+    banka: bankaEl.value,
+    tarih: tarihEl.value,
+    gider: isGelir ? 0 : tutar,
+    gelir: isGelir ? tutar : 0,
+    aciklama: aciklamaEl.value,
+    borcTipi: borcTipiEl.value,
+    durum: durumEl.value,
+    limit: limitEl.value || ''
+  };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Kaydediliyor...';
+  const wasEditing = isEditing;
+  let succeeded = false;
+
+  try {
+    if(!wasEditing){
+      const json = await apiPost(Object.assign({action:'create'}, payload));
+      if(json.ok){ succeeded = true; } else { alert('Kaydedilemedi: ' + json.error); }
+    } else {
+      const eskiBanka = eskiBankaEl.value;
+      if(eskiBanka !== payload.banka){
+        // Banka değiştiyse: eski sekmeden sil, yeni sekmede yeni kayıt oluştur
+        const delRes = await apiPost({action:'delete', banka: eskiBanka, kod: kodEl.value});
+        if(!delRes.ok){
+          alert('Eski kayıt taşınamadı: ' + delRes.error);
+        } else {
+          const createRes = await apiPost(Object.assign({action:'create'}, payload));
+          if(createRes.ok){ succeeded = true; } else { alert('Yeni sekmede oluşturulamadı: ' + createRes.error); }
+        }
+      } else {
+        const json = await apiPost(Object.assign({action:'update', kod: kodEl.value}, payload));
+        if(json.ok){ succeeded = true; } else { alert('Güncellenemedi: ' + json.error); }
+      }
+    }
+  } catch(err){
+    alert('İşlem hatası: ' + err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = wasEditing ? 'Kaydı Güncelle' : 'Kaydı Ekle';
+  }
+
+  if(succeeded){
+    await loadAll();
+    resetForm();
+  }
+});
+
+/* ---------- CSV dışa aktarım ---------- */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = getFilteredRows();
+  if(rows.length === 0){ alert('Dışa aktarılacak kayıt yok.'); return; }
+  const headers = ['Kod','Ödeme Tarihi','Gider','Gelir','Bakiye','Açıklama','Banka','Borç Tipi','Gerçekleşme Durumu','Limit'];
+  const csvRows = rows.map(e => [e.kod, e.tarih, e.gider||'', e.gelir||'', e.bakiye, e.aciklama, e.banka, e.borcTipi, e.durum, e.limit||'']);
+  let csv = headers.join(';') + '\n' + csvRows.map(r => r.join(';')).join('\n');
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'butce_kayitlari.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ================= Toplu Excel İçe Aktarımı ================= */
+const bulkModalOverlay = document.getElementById('bulkModalOverlay');
+const bulkTextarea = document.getElementById('bulkTextarea');
+const previewBulkBtn = document.getElementById('previewBulkBtn');
+const confirmBulkBtn = document.getElementById('confirmBulkBtn');
+const bulkPreviewArea = document.getElementById('bulkPreviewArea');
+const bulkStatus = document.getElementById('bulkStatus');
+let pendingImportRecords = [];
+
+document.getElementById('openBulkImportBtn').addEventListener('click', () => {
+  if(!API_URL){ alert('Önce üstteki alandan Google Sheets bağlantısını kaydedin.'); return; }
+  bulkTextarea.value = '';
+  bulkPreviewArea.innerHTML = '';
+  bulkStatus.textContent = '';
+  confirmBulkBtn.style.display = 'none';
+  confirmBulkBtn.disabled = true;
+  pendingImportRecords = [];
+  bulkModalOverlay.classList.add('open');
+});
+document.getElementById('closeBulkModalBtn').addEventListener('click', () => {
+  bulkModalOverlay.classList.remove('open');
+});
+bulkModalOverlay.addEventListener('click', (e) => {
+  if(e.target === bulkModalOverlay){ bulkModalOverlay.classList.remove('open'); }
+});
+
+const BANKA_ALIASES = {
+  'akbank':'Akbank', 'enpara':'Enpara',
+  'garanti':'Garanti BBVA', 'garantı':'Garanti BBVA', 'garanti bbva':'Garanti BBVA',
+  'işbank':'İşbank', 'isbank':'İşbank',
+  'vakıfbank':'VakıfBank', 'vakifbank':'VakıfBank', 'vakıf bank':'VakıfBank', 'vakif bank':'VakıfBank',
+  'yapı kredi':'Yapı Kredi', 'yapi kredi':'Yapı Kredi',
+  'ziraat':'Ziraat Bankası', 'ziraat bankası':'Ziraat Bankası', 'ziraat bankasi':'Ziraat Bankası',
+  'diğer':'Diğer', 'diger':'Diğer'
+};
+const BORCTIPI_ALIASES = {
+  'gelir':'Gelir', 'sabit giderler':'Sabit Giderler', 'kredi':'Kredi',
+  'kredi kartı':'Kredi Kartı', 'kredi karti':'Kredi Kartı',
+  'şirket masrafları':'Şirket Masrafları', 'sirket masraflari':'Şirket Masrafları',
+  'bes':'Bes', 'elden ödeme':'Elden Ödeme', 'elden odeme':'Elden Ödeme'
+};
+const HEADER_ALIASES = {
+  tarih: ['ödeme tarihi','odeme tarihi','tarih'],
+  gider: ['gider'],
+  gelir: ['gelir'],
+  aciklama: ['açıklama','aciklama'],
+  banka: ['banka'],
+  borcTipi: ['borç tipi','borc tipi'],
+  durum: ['gerçekleşme durumu','gerceklesme durumu','durum'],
+  limit: ['limit'],
+  bakiye: ['bakiye'],
+  kod: ['kod']
+};
+
+function trLower(s){
+  try { return String(s).toLocaleLowerCase('tr-TR').trim(); } catch(e){ return String(s).toLowerCase().trim(); }
+}
+
+function pad2(n){ n = String(n); return n.length < 2 ? '0' + n : n; }
+
+function parseDateFlexible(s){
+  if(s === undefined || s === null) return null;
+  s = String(s).trim();
+  if(s === '') return null;
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){ return m[1] + '-' + pad2(m[2]) + '-' + pad2(m[3]); }
+  m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if(m){ return m[3] + '-' + pad2(m[1]) + '-' + pad2(m[2]); }
+  const d = new Date(s);
+  if(!isNaN(d.getTime())){ return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  return null;
+}
+
+function parseAmountFlexible(s){
+  if(s === undefined || s === null) return 0;
+  s = String(s).trim().replace(/[₺\s]/g, '');
+  if(s === '') return 0;
+  const hasComma = s.indexOf(',') !== -1;
+  const hasDot = s.indexOf('.') !== -1;
+  if(hasComma && hasDot){
+    if(s.lastIndexOf(',') > s.lastIndexOf('.')){ s = s.replace(/\./g, '').replace(',', '.'); }
+    else { s = s.replace(/,/g, ''); }
+  } else if(hasComma){
+    s = s.replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function normalizeBanka(s){
+  const key = trLower(s);
+  return BANKA_ALIASES[key] || 'Diğer';
+}
+function normalizeBorcTipi(s){
+  const key = trLower(s);
+  return BORCTIPI_ALIASES[key] || (s ? String(s).trim() : 'Sabit Giderler');
+}
+function normalizeDurum(s){
+  const key = trLower(s);
+  if(key.indexOf('gerçek') !== -1 || key.indexOf('gercek') !== -1) return 'Gerçekleşen';
+  return 'Bütçe';
+}
+
+function detectDelimiter(line){
+  const counts = { '\t': (line.match(/\t/g) || []).length, ';': (line.match(/;/g) || []).length, ',': (line.match(/,/g) || []).length };
+  let best = '\t', bestCount = counts['\t'];
+  if(counts[';'] > bestCount){ best = ';'; bestCount = counts[';']; }
+  if(counts[','] > bestCount){ best = ','; bestCount = counts[',']; }
+  return bestCount > 0 ? best : '\t';
+}
+
+function parseImportText(text){
+  const lines = text.split(/\r\n|\r|\n/).filter(l => l.trim() !== '');
+  if(lines.length < 2){
+    return { records: [], errors: ['En az bir başlık satırı ve bir veri satırı olmalı.'] };
+  }
+  const delimiter = detectDelimiter(lines[0]);
+  const headerCells = lines[0].split(delimiter).map(h => trLower(h));
+
+  const columnMap = {};
+  headerCells.forEach((cell, idx) => {
+    Object.keys(HEADER_ALIASES).forEach(key => {
+      if(HEADER_ALIASES[key].indexOf(cell) !== -1 && columnMap[key] === undefined){
+        columnMap[key] = idx;
+      }
+    });
+  });
+
+  if(columnMap.tarih === undefined || columnMap.banka === undefined || (columnMap.gider === undefined && columnMap.gelir === undefined)){
+    return { records: [], errors: ['Başlık satırında "Ödeme Tarihi", "Banka" ve "Gider"/"Gelir" sütunları bulunamadı. Lütfen şablon başlıkları kullanın ve ilk satırı başlık olarak bırakın.'] };
+  }
+
+  const records = [];
+  const errors = [];
+
+  for(let i = 1; i < lines.length; i++){
+    const cells = lines[i].split(delimiter);
+    const get = (key) => columnMap[key] !== undefined ? (cells[columnMap[key]] || '').trim() : '';
+
+    const tarihRaw = get('tarih');
+    const tarih = parseDateFlexible(tarihRaw);
+    const banka = normalizeBanka(get('banka'));
+    const aciklama = get('aciklama') || '(açıklama yok)';
+    const gider = parseAmountFlexible(get('gider'));
+    const gelir = parseAmountFlexible(get('gelir'));
+    const borcTipi = normalizeBorcTipi(get('borcTipi'));
+    const durum = normalizeDurum(get('durum'));
+    const limit = get('limit') ? parseAmountFlexible(get('limit')) : '';
+
+    if(!tarih){
+      errors.push('Satır ' + (i + 1) + ': tarih ayrıştırılamadı ("' + tarihRaw + '"), bu satır atlandı.');
+      continue;
+    }
+    if(gider === 0 && gelir === 0){
+      errors.push('Satır ' + (i + 1) + ': gider/gelir tutarı bulunamadı veya sıfır, bu satır atlandı.');
+      continue;
+    }
+
+    records.push({ banka, tarih, gider, gelir, aciklama, borcTipi, durum, limit, _line: i + 1 });
+  }
+
+  records.sort((a, b) => a.tarih.localeCompare(b.tarih) || (a._line - b._line));
+
+  return { records, errors };
+}
+
+previewBulkBtn.addEventListener('click', () => {
+  const parsed = parseImportText(bulkTextarea.value);
+  pendingImportRecords = parsed.records;
+
+  let html = '';
+  if(parsed.records.length > 0){
+    html += '<table><thead><tr><th>Tarih</th><th>Banka</th><th>Açıklama</th><th class="num">Gider</th><th class="num">Gelir</th><th>Borç Tipi</th><th>Durum</th></tr></thead><tbody>';
+    parsed.records.slice(0, 60).forEach(r => {
+      html += '<tr><td>' + r.tarih + '</td><td>' + r.banka + '</td><td>' + escapeHtml(r.aciklama) + '</td><td class="num gider-text">' + (r.gider ? fmt(r.gider) : '') + '</td><td class="num gelir-text">' + (r.gelir ? fmt(r.gelir) : '') + '</td><td>' + r.borcTipi + '</td><td>' + r.durum + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    if(parsed.records.length > 60){ html += '<p class="hint" style="padding:8px;">... ve ' + (parsed.records.length - 60) + ' satır daha (önizlemede gösterilmiyor, içe aktarıma dahil).</p>'; }
+  }
+  bulkPreviewArea.innerHTML = html;
+
+  let statusText = parsed.records.length + ' satır ayrıştırıldı.';
+  if(parsed.errors.length > 0){
+    statusText += ' ' + parsed.errors.length + ' satır atlandı: ' + parsed.errors.slice(0, 5).join(' | ') + (parsed.errors.length > 5 ? ' ...' : '');
+  }
+  bulkStatus.textContent = statusText;
+
+  if(parsed.records.length > 0){
+    confirmBulkBtn.style.display = 'inline-block';
+    confirmBulkBtn.disabled = false;
+  } else {
+    confirmBulkBtn.style.display = 'none';
+  }
+});
+
+confirmBulkBtn.addEventListener('click', async () => {
+  if(pendingImportRecords.length === 0) return;
+  if(!confirm(pendingImportRecords.length + ' kayıt veritabanına eklenecek. Onaylıyor musunuz?')) return;
+
+  confirmBulkBtn.disabled = true;
+  previewBulkBtn.disabled = true;
+  bulkStatus.textContent = 'İçe aktarılıyor, lütfen bekleyin (sekmeyi kapatmayın)...';
+
+  try {
+    const json = await apiPost({ action: 'bulkCreate', records: pendingImportRecords });
+    if(json.ok){
+      bulkStatus.textContent = '✅ ' + json.created + ' kayıt başarıyla eklendi.' + (json.errors && json.errors.length ? ' Uyarılar: ' + json.errors.join(', ') : '');
+      pendingImportRecords = [];
+      confirmBulkBtn.style.display = 'none';
+      await loadAll();
+    } else {
+      bulkStatus.textContent = '❌ İçe aktarılamadı: ' + json.error;
+    }
+  } catch(err){
+    bulkStatus.textContent = '❌ Hata: ' + err.message;
+  }
+
+  confirmBulkBtn.disabled = false;
+  previewBulkBtn.disabled = false;
+});
+
+/* ---------- Başlangıç ---------- */
+renderTable();
+renderCharts();
+if(API_URL){ loadAll(); }
+</script>
+</body>
+</html>
