@@ -420,8 +420,19 @@
     <div class="charts-grid">
       <div class="chart-box wide">
         <div class="chart-box-header">
-          <h3>Genel Bakiye Trendi</h3>
+          <h3 id="balanceChartTitle">Genel Bakiye Trendi</h3>
           <div class="chart-filter-selects">
+            <select id="chartBankFilter">
+              <option value="__all__">Tüm Bankalar</option>
+              <option>Akbank</option>
+              <option>Enpara</option>
+              <option>Garanti BBVA</option>
+              <option>İşbank</option>
+              <option>VakıfBank</option>
+              <option>Yapı Kredi</option>
+              <option>Ziraat Bankası</option>
+              <option>Diğer</option>
+            </select>
             <select id="chartYearFilter"><option value="__all__">Tüm Yıllar</option></select>
             <select id="chartMonthFilter">
               <option value="__all__">Tüm Aylar</option>
@@ -495,6 +506,7 @@ const filterBorcTipiEl = document.getElementById('filterBorcTipi');
 const filterDurumEl = document.getElementById('filterDurum');
 const yearFilterEl = document.getElementById('yearFilter');
 const monthFilterEl = document.getElementById('monthFilter');
+const chartBankFilterEl = document.getElementById('chartBankFilter');
 const chartYearFilterEl = document.getElementById('chartYearFilter');
 const chartMonthFilterEl = document.getElementById('chartMonthFilter');
 
@@ -608,6 +620,7 @@ filterBorcTipiEl.addEventListener('change', renderTable);
 filterDurumEl.addEventListener('change', renderTable);
 yearFilterEl.addEventListener('change', renderTable);
 monthFilterEl.addEventListener('change', renderTable);
+chartBankFilterEl.addEventListener('change', renderCharts);
 chartYearFilterEl.addEventListener('change', renderCharts);
 chartMonthFilterEl.addEventListener('change', renderCharts);
 
@@ -778,9 +791,19 @@ function renderCharts(){
   }
 }
 
-/* Genel Bakiye Trendi grafiğine uygulanan yıl/ay filtresi (bu grafiğe özeldir) */
+/* Genel Bakiye Trendi grafiğine uygulanan banka/yıl/ay filtresi (bu grafiğe özeldir).
+   "Tüm Bankalar" seçiliyken tarih bazlı (master) veritabanı ve genel (cross-bank)
+   bakiye kullanılır; belirli bir banka seçiliyken o bankanın kendi kronolojik
+   bakiyesi (kendi sekmesi) kullanılır — Kayıtlar tablosundaki mantıkla aynıdır. */
 function getBalanceChartRows(){
-  let rows = masterRows.slice();
+  let rows;
+  if(chartBankFilterEl.value === '__all__'){
+    rows = masterRows.slice();
+  } else {
+    rows = (allData[chartBankFilterEl.value] || [])
+      .slice()
+      .sort((a, b) => String(a.tarih || '').localeCompare(String(b.tarih || '')));
+  }
   if(chartYearFilterEl.value !== '__all__'){
     rows = rows.filter(r => String(r.tarih || '').slice(0, 4) === chartYearFilterEl.value);
   }
@@ -795,13 +818,18 @@ function renderBalanceChart(){
   const labels = rows.map(r => formatTrDate(r.tarih));
   const data = rows.map(r => Number(r.bakiye) || 0);
 
+  const titleEl = document.getElementById('balanceChartTitle');
+  titleEl.textContent = chartBankFilterEl.value === '__all__'
+    ? 'Genel Bakiye Trendi'
+    : chartBankFilterEl.value + ' Bakiye Trendi';
+
   destroyChart(chartBalance);
   chartBalance = new Chart(document.getElementById('chartBalance'), {
     type: 'line',
     data: {
       labels,
       datasets: [{
-        label: 'Genel Bakiye',
+        label: chartBankFilterEl.value === '__all__' ? 'Genel Bakiye' : chartBankFilterEl.value + ' Bakiye',
         data,
         borderColor: POSITIVE_COLOR,
         backgroundColor: 'rgba(47,111,235,0.12)',
