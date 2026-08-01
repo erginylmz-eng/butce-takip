@@ -172,6 +172,16 @@
   .subcard{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
   .subcard h2{font-size:15px;margin:0 0 16px;}
 
+  .dup-group{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+  .dup-group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;gap:6px;}
+  .dup-group-header strong{color:var(--text);}
+  .dup-group-header button{flex:0 0 auto;padding:5px 10px;font-size:11.5px;}
+  .dup-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f1f2f4;font-size:12.5px;flex-wrap:wrap;}
+  .dup-row:last-child{border-bottom:none;}
+  .dup-row input[type=checkbox]{width:auto;flex:0 0 auto;}
+  .dup-row .dup-field{color:var(--muted);}
+  .dup-empty{padding:30px 10px;text-align:center;color:var(--muted);font-size:13px;}
+
   .period-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
   .period-selects{display:flex;gap:8px;flex-wrap:wrap;}
   .period-selects select{width:auto;min-width:110px;}
@@ -330,6 +340,7 @@
         <span style="font-size:12.5px;color:var(--muted);"><span id="rowCount">0</span> kayıt</span>
       </div>
       <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" id="findDuplicatesBtn">🧹 Mükerrer Kayıtları Bul</button>
         <button class="btn-secondary" id="refreshBtn">Yenile</button>
       </div>
     </div>
@@ -573,6 +584,21 @@
     </div>
     <div id="bulkPreviewArea"></div>
     <div class="status-msg" id="bulkStatus"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="duplicatesModalOverlay">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <h2>🧹 Mükerrer Kayıtları Bul ve Sil</h2>
+      <button class="modal-close" id="closeDuplicatesModalBtn">✕</button>
+    </div>
+    <p class="hint">Banka, Tarih, Gider, Gelir, Açıklama, Borç Tipi, Durum ve Limit sütunları birebir aynı olan kayıtlar mükerrer kabul edilir. Kod, Bakiye ve zaman damgaları her kayıtta zaten benzersiz/otomatik üretildiği için karşılaştırmaya dahil edilmez — aksi halde hiçbir kayıt "aynı" sayılmazdı. Aşağıda bulunan her grupta hangi kayıt(lar)ı silmek istediğinizi işaretleyip en altta "Seçilenleri Sil"e basın; bir grupta en az bir kayıt işaretsiz bırakmanız önerilir.</p>
+    <div class="status-msg" id="duplicatesStatus"></div>
+    <div id="duplicatesResultArea"></div>
+    <div class="modal-actions">
+      <button class="submit-btn" id="deleteSelectedDuplicatesBtn" style="display:none;background:var(--gider);">Seçilenleri Sil</button>
+    </div>
   </div>
 </div>
 
@@ -956,6 +982,114 @@ function escapeHtml(s){
   if(s === undefined || s === null) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+/* ================= Mükerrer Kayıtları Bul ================= */
+// "Mükerrer" tanımı: Kod, Bakiye, Oluşturma/Güncelleme Zamanı ve Hareket Kodu
+// her kayıtta zaten benzersiz/otomatik üretildiği için karşılaştırmaya DAHİL
+// EDİLMEZ (aksi halde hiçbir kayıt birbirinin aynısı sayılmazdı). Bunun yerine
+// kullanıcının elle girdiği/anlamlı sütunlar karşılaştırılır: Banka, Tarih,
+// Gider, Gelir, Açıklama, Borç Tipi, Durum, Limit. masterRows tüm bankaları
+// zaten "banka" alanıyla birlikte içerdiği için tek kaynak olarak kullanılır.
+const duplicatesModalOverlay = document.getElementById('duplicatesModalOverlay');
+const duplicatesResultAreaEl = document.getElementById('duplicatesResultArea');
+const duplicatesStatusEl = document.getElementById('duplicatesStatus');
+const deleteSelectedDuplicatesBtn = document.getElementById('deleteSelectedDuplicatesBtn');
+let duplicateGroups = []; // [[row, row, ...], ...] — her alt dizi bir mükerrer grubu
+
+function duplicateKey(r){
+  return [
+    r.banka || '',
+    r.tarih || '',
+    Number(r.gider) || 0,
+    Number(r.gelir) || 0,
+    trLower(r.aciklama || ''),
+    r.borcTipi || '',
+    r.durum || '',
+    Number(r.limit) || 0
+  ].join('|||');
+}
+
+function findDuplicates(){
+  const groupsMap = new Map();
+  masterRows.forEach(r => {
+    const key = duplicateKey(r);
+    if(!groupsMap.has(key)){ groupsMap.set(key, []); }
+    groupsMap.get(key).push(r);
+  });
+  duplicateGroups = Array.from(groupsMap.values()).filter(g => g.length > 1);
+  // Her grup içinde tarih/kod sırasına göre tutarlı bir görünüm için sırala
+  duplicateGroups.forEach(g => g.sort((a, b) => String(a.kod || '').localeCompare(String(b.kod || ''))));
+  renderDuplicates();
+}
+
+function renderDuplicates(){
+  duplicatesStatusEl.textContent = '';
+  if(duplicateGroups.length === 0){
+    duplicatesResultAreaEl.innerHTML = '<div class="dup-empty">Mükerrer kayıt bulunamadı. 🎉</div>';
+    deleteSelectedDuplicatesBtn.style.display = 'none';
+    return;
+  }
+  duplicatesResultAreaEl.innerHTML = duplicateGroups.map((group, gi) => `
+    <div class="dup-group">
+      <div class="dup-group-header">
+        <span><strong>${group.length} adet</strong> aynı kayıt — ${escapeHtml(group[0].aciklama)} · ${formatTrDate(group[0].tarih)} · ${group[0].banka}</span>
+        <button type="button" class="btn-secondary" onclick="selectAllButFirst(${gi})">İlki hariç tümünü işaretle</button>
+      </div>
+      ${group.map((r, ri) => `
+        <label class="dup-row">
+          <input type="checkbox" class="dup-checkbox" data-group="${gi}" data-row="${ri}" data-banka="${escapeHtml(r.banka)}" data-kod="${escapeHtml(r.kod)}">
+          <span class="badge">${r.kod}</span>
+          <span class="dup-field">${formatTrDate(r.tarih)}</span>
+          <span class="dup-field">${r.borcTipi || ''}</span>
+          <span class="dup-field">${r.durum || ''}</span>
+          <span class="${r.gider ? 'gider-text' : 'dup-field'}">${r.gider ? fmt(r.gider) : ''}</span>
+          <span class="${r.gelir ? 'gelir-text' : 'dup-field'}">${r.gelir ? fmt(r.gelir) : ''}</span>
+          <span class="dup-field">Bakiye: ${fmt(r.bakiye)}</span>
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+  deleteSelectedDuplicatesBtn.style.display = 'inline-block';
+}
+
+function selectAllButFirst(gi){
+  document.querySelectorAll('.dup-checkbox[data-group="' + gi + '"]').forEach(cb => {
+    cb.checked = cb.getAttribute('data-row') !== '0';
+  });
+}
+
+document.getElementById('findDuplicatesBtn').addEventListener('click', () => {
+  duplicatesModalOverlay.classList.add('open');
+  findDuplicates();
+});
+document.getElementById('closeDuplicatesModalBtn').addEventListener('click', () => {
+  duplicatesModalOverlay.classList.remove('open');
+});
+duplicatesModalOverlay.addEventListener('click', (e) => {
+  if(e.target === duplicatesModalOverlay){ duplicatesModalOverlay.classList.remove('open'); }
+});
+
+deleteSelectedDuplicatesBtn.addEventListener('click', async () => {
+  const checked = Array.from(document.querySelectorAll('.dup-checkbox:checked'));
+  if(checked.length === 0){ alert('Silmek için en az bir kayıt işaretleyin.'); return; }
+  if(!confirm(checked.length + ' kayıt kalıcı olarak silinecek. Emin misiniz?')) return;
+
+  deleteSelectedDuplicatesBtn.disabled = true;
+  deleteSelectedDuplicatesBtn.textContent = 'Siliniyor...';
+  let ok = 0, fail = 0;
+  for(const cb of checked){
+    try {
+      const json = await apiPost({ action: 'delete', banka: cb.getAttribute('data-banka'), kod: cb.getAttribute('data-kod') });
+      if(json.ok){ ok++; } else { fail++; }
+    } catch(err){ fail++; }
+  }
+  deleteSelectedDuplicatesBtn.disabled = false;
+  deleteSelectedDuplicatesBtn.textContent = 'Seçilenleri Sil';
+  duplicatesStatusEl.textContent = ok + ' kayıt silindi' + (fail > 0 ? ', ' + fail + ' kayıt silinemedi' : '') + '.';
+
+  await loadAll();
+  findDuplicates(); // kalan mükerrerleri güncel veriyle yeniden göster
+});
 
 /* ---------- Grafikler ---------- */
 let chartBalance, chartCategory;
