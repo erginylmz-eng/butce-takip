@@ -28,7 +28,7 @@
     color:var(--text);
     padding:24px;
   }
-  .wrap{max-width:820px;margin:0 auto;}
+  .wrap{max-width:1230px;margin:0 auto;}
   h1{font-size:22px;margin:0 0 4px;}
   .subtitle{color:var(--muted);font-size:14px;margin:0 0 16px;}
   .card{
@@ -142,8 +142,35 @@
   .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eef2ff;color:var(--primary);}
   .editing-banner{background:#eef2ff;border:1px solid #c7d2fe;color:var(--primary-dark);font-size:12.5px;padding:8px 12px;border-radius:8px;margin-bottom:12px;}
 
-  .bulk-trigger-wrap{margin-bottom:18px;}
-  .bulk-trigger-wrap button{width:100%;padding:12px;font-size:14px;}
+  .top-buttons-wrap{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .top-buttons-wrap button{flex:1 1 220px;padding:12px;font-size:14px;}
+
+  .modal-box.wide{max-width:1040px;}
+  .account-add-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .account-add-form input{flex:2 1 220px;}
+  .account-add-form select{flex:1 1 130px;width:auto;}
+  .account-add-form button{flex:0 0 auto;white-space:nowrap;padding:10px 16px;}
+  .account-buttons{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0;}
+  .account-btn{
+    padding:9px 14px;border-radius:20px;border:1px solid var(--border);background:#fff;
+    font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:6px;
+  }
+  .account-btn:hover{background:#f3f4f6;}
+  .account-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .account-btn.active .acc-tip{background:rgba(255,255,255,0.25);color:#fff;}
+  .acc-tip{font-size:10px;padding:1px 6px;border-radius:999px;background:#eef2ff;color:var(--primary);}
+  .account-balance-box{
+    background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:16px;
+    margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  }
+  .account-balance-box .label{font-size:13px;color:var(--muted);}
+  .account-balance-box .value{font-size:24px;font-weight:700;color:var(--text);}
+  .account-balance-box .value.negative{color:var(--gider);}
+  .acilis-form{background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:6px;}
+  .acilis-form label{margin-top:10px;}
+  .acilis-form label:first-of-type{margin-top:0;}
+  .subcard{margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+  .subcard h2{font-size:15px;margin:0 0 16px;}
 
   .period-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
   .period-selects{display:flex;gap:8px;flex-wrap:wrap;}
@@ -209,7 +236,8 @@
 
   <div class="conn-error" id="connectionStatus" style="display:none;"></div>
 
-  <div class="bulk-trigger-wrap">
+  <div class="top-buttons-wrap">
+    <button class="btn-secondary" id="openHareketlerBtn">🏦 Banka Hareketleri</button>
     <button class="btn-secondary" id="openBulkImportBtn">📥 Excel'den Toplu Veri Aktar</button>
   </div>
 
@@ -280,58 +308,6 @@
       <button type="submit" class="submit-btn" id="submitBtn">Kaydı Ekle</button>
       <button type="button" class="cancel-btn" id="cancelEditBtn" style="display:none;">Düzenlemeyi İptal Et</button>
       <p class="hint">Bakiye ve kod otomatik hesaplanır/atanır; elle değiştirilemez. Kayıtlar seçili bankanın kendi sekmesine göre sıralı bakiye üretir, bu yüzden kayıtları tarih sırasına göre girmeniz önerilir.</p>
-    </form>
-  </div>
-
-  <div class="card">
-    <h2>Bankalar Arası Transfer</h2>
-    <form id="transferForm">
-      <div class="row2">
-        <div>
-          <label for="transferKaynakBanka">Kaynak Banka (paranın çıktığı)</label>
-          <select id="transferKaynakBanka">
-            <option>Akbank</option>
-            <option>Enpara</option>
-            <option>Garanti BBVA</option>
-            <option>İşbank</option>
-            <option>VakıfBank</option>
-            <option>Yapı Kredi</option>
-            <option>Ziraat Bankası</option>
-            <option selected>Diğer</option>
-          </select>
-        </div>
-        <div>
-          <label for="transferHedefBanka">Hedef Banka (paranın girdiği)</label>
-          <select id="transferHedefBanka">
-            <option selected>Akbank</option>
-            <option>Enpara</option>
-            <option>Garanti BBVA</option>
-            <option>İşbank</option>
-            <option>VakıfBank</option>
-            <option>Yapı Kredi</option>
-            <option>Ziraat Bankası</option>
-            <option>Diğer</option>
-          </select>
-        </div>
-      </div>
-
-      <label for="transferTarih">Tarih</label>
-      <input type="date" id="transferTarih" required>
-
-      <label for="transferTutar">Tutar (₺)</label>
-      <input type="number" id="transferTutar" step="0.01" min="0" placeholder="0.00" required>
-
-      <label for="transferAciklama">Açıklama (otomatik oluşturulur)</label>
-      <input type="text" id="transferAciklama" readonly>
-
-      <label for="transferDurum">Gerçekleşme Durumu</label>
-      <select id="transferDurum">
-        <option>Bütçe</option>
-        <option selected>Gerçekleşen</option>
-      </select>
-
-      <button type="submit" class="submit-btn" id="transferSubmitBtn">Transferi Kaydet</button>
-      <p class="hint">Kaydettiğinizde kaynak bankaya gider (eksi), hedef bankaya gelir (artı) olacak şekilde iki bağlantılı kayıt oluşturulur; her ikisi de "Banka Transferi" olarak etiketlenir ve Toplam Gelir/Gider ile kategori grafiğine gerçek gelir/gider olarak dahil edilmez. Bir transferi silmek/düzenlemek isterseniz Kayıtlar bölümünden her iki kaydı da ayrı ayrı bulup işlem yapmanız gerekir.</p>
     </form>
   </div>
 
@@ -501,6 +477,86 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="hareketlerModalOverlay">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <h2>🏦 Banka Hareketleri</h2>
+      <button class="modal-close" id="closeHareketlerModalBtn">✕</button>
+    </div>
+    <p class="hint">Bu ekran, gerçek banka/kredi kartı ekstrenizi takip eder. Bütçedeki bir kayıt "Gerçekleşen" olduğunda ilgili hesaba otomatik hareket kaydı düşer; ayrıca açılış bakiyesi girebilir ve hesaplar arası transfer yapabilirsiniz. Bütçe sekmesinden bağımsızdır.</p>
+
+    <div class="account-add-form">
+      <input type="text" id="newAccountName" placeholder="Yeni hesap/kart adı (örn: N Kolay, Bonus Kart...)">
+      <select id="newAccountType">
+        <option value="Banka">Banka</option>
+        <option value="Kredi Kartı">Kredi Kartı</option>
+      </select>
+      <button class="btn-secondary" id="addAccountBtn">+ Hesap Ekle</button>
+    </div>
+    <div class="status-msg" id="addAccountStatus"></div>
+
+    <div class="account-buttons" id="accountButtons"></div>
+
+    <div id="hareketPanel" style="display:none;">
+      <div class="account-balance-box">
+        <div class="label">Güncel Bakiye — <strong id="selectedAccountName"></strong></div>
+        <div class="value" id="selectedAccountBalance">0 ₺</div>
+      </div>
+
+      <div class="acilis-form">
+        <label for="acilisTarih">Açılış Bakiyesi Tarihi</label>
+        <input type="date" id="acilisTarih">
+        <label for="acilisTutar">Açılış Bakiyesi Tutarı (₺)</label>
+        <input type="number" id="acilisTutar" step="0.01" placeholder="Örn: 5000 ya da kredi kartı borcu için -2500">
+        <button class="btn-secondary" id="saveAcilisBtn" style="margin-top:10px;">Açılış Bakiyesini Kaydet</button>
+        <p class="hint">Bu, hesabın ilk kaydı olur; sonraki tüm hareketler bu tutarın üzerine eklenir/çıkarılır. Var olan bir açılış bakiyesini düzeltmek için tekrar kaydedebilirsiniz.</p>
+      </div>
+      <div class="status-msg" id="acilisStatus"></div>
+
+      <div class="table-wrap" style="margin-top:14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Kod</th><th>Tarih</th><th>Açıklama</th><th>Kaynak</th>
+              <th class="num">Gider</th><th class="num">Gelir</th><th class="num">Bakiye</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="hareketTableBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">"Bütçe" kaynaklı hareketler, ilgili Bütçe kaydı "Gerçekleşen" işaretlendiğinde otomatik oluşur/güncellenir/silinir — buradan doğrudan değiştirilemez, kaynağındaki Bütçe kaydını düzenleyin. "Transfer" kaynaklı hareketler doğrudan silinebilir (eşleşen karşı taraf da birlikte silinir).</p>
+    </div>
+
+    <div class="subcard">
+      <h2>Bankalar Arası Transfer</h2>
+      <form id="transferForm">
+        <div class="row2">
+          <div>
+            <label for="transferKaynakBanka">Kaynak Hesap (paranın çıktığı)</label>
+            <select id="transferKaynakBanka"></select>
+          </div>
+          <div>
+            <label for="transferHedefBanka">Hedef Hesap (paranın girdiği)</label>
+            <select id="transferHedefBanka"></select>
+          </div>
+        </div>
+
+        <label for="transferTarih">Tarih</label>
+        <input type="date" id="transferTarih" required>
+
+        <label for="transferTutar">Tutar (₺)</label>
+        <input type="number" id="transferTutar" step="0.01" min="0" placeholder="0.00" required>
+
+        <label for="transferAciklama">Açıklama (otomatik oluşturulur)</label>
+        <input type="text" id="transferAciklama" readonly>
+
+        <button type="submit" class="submit-btn" id="transferSubmitBtn">Transferi Kaydet</button>
+        <p class="hint">Kaydettiğinizde kaynak hesaba gider (eksi), hedef hesaba gelir (artı) olacak şekilde iki bağlantılı hareket kaydı oluşturulur. Bütçe sayfasında hiçbir işlem yapmaz.</p>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="bulkModalOverlay">
   <div class="modal-box">
     <div class="modal-header">
@@ -529,8 +585,11 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC-wzKriGof7SLcn9-L0KlJhqYU9EaMD1WaZ6v0a_ADl5kievHicRHLKh15KIOY9Oh/exec';
 
 /* ---------- Durum ---------- */
-let allData = {}; // { "Akbank": [ {kod, tarih, gider, gelir, bakiye, aciklama, borcTipi, durum, limit}, ... ], ... } — banka bazlı veritabanı
-let masterRows = []; // tarih bazlı (cross-bank) veritabanı — tüm bankalar, tarihe göre sıralı, genel bakiye
+let allData = {}; // { "Akbank": [ {kod, tarih, gider, gelir, bakiye, aciklama, borcTipi, durum, limit, hareketKodu}, ... ], ... } — banka bazlı BÜTÇE veritabanı
+let masterRows = []; // tarih bazlı (cross-bank) BÜTÇE veritabanı — tüm bankalar, tarihe göre sıralı, genel bakiye
+let accountsData = []; // [{ad, tip}] — Banka Hareketleri'nde tanımlı hesaplar (sabit bankalar + özel eklenenler)
+let hareketlerData = {}; // { "Akbank": [ {kod, tarih, gider, gelir, bakiye, aciklama, kaynak, referans}, ... ], ... } — gerçek banka hareketleri
+let selectedHareketBanka = null; // Banka Hareketleri modalinde seçili hesap
 let isEditing = false;
 let firstChartsRender = true;
 let sortColumn = 'tarih';
@@ -569,22 +628,36 @@ const editingBanner = document.getElementById('editingBanner');
 const editingKodEl = document.getElementById('editingKod');
 const bankFilter = document.getElementById('bankFilter');
 
+/* ---------- Banka Hareketleri modal elemanları ---------- */
+const hareketlerModalOverlay = document.getElementById('hareketlerModalOverlay');
+const newAccountNameEl = document.getElementById('newAccountName');
+const newAccountTypeEl = document.getElementById('newAccountType');
+const addAccountStatusEl = document.getElementById('addAccountStatus');
+const accountButtonsEl = document.getElementById('accountButtons');
+const hareketPanelEl = document.getElementById('hareketPanel');
+const selectedAccountNameEl = document.getElementById('selectedAccountName');
+const selectedAccountBalanceEl = document.getElementById('selectedAccountBalance');
+const acilisTarihEl = document.getElementById('acilisTarih');
+const acilisTutarEl = document.getElementById('acilisTutar');
+const acilisStatusEl = document.getElementById('acilisStatus');
+const hareketTableBodyEl = document.getElementById('hareketTableBody');
+
 const transferFormEl = document.getElementById('transferForm');
 const transferKaynakBankaEl = document.getElementById('transferKaynakBanka');
 const transferHedefBankaEl = document.getElementById('transferHedefBanka');
 const transferTarihEl = document.getElementById('transferTarih');
 const transferTutarEl = document.getElementById('transferTutar');
 const transferAciklamaEl = document.getElementById('transferAciklama');
-const transferDurumEl = document.getElementById('transferDurum');
 const transferSubmitBtn = document.getElementById('transferSubmitBtn');
 
 tarihEl.valueAsDate = new Date();
 transferTarihEl.valueAsDate = new Date();
 
 // Bankalar arası transferde Açıklama alanı kullanıcı tarafından düzenlenemez;
-// kaynak/hedef banka seçimine göre otomatik "X'tan Y'ya EFT" metni üretilir.
+// kaynak/hedef hesap seçimine göre otomatik "X'tan Y'ya EFT" metni üretilir.
 // Sabit 8 banka adı için doğru Türkçe hâl eki (-'tan/-'ten/-'dan/-'den ve
-// -'a/-'e/-'ya/-'ye) burada elle (doğru şekilde) tanımlanmıştır.
+// -'a/-'e/-'ya/-'ye) burada elle (doğru şekilde) tanımlanmıştır; özel eklenen
+// hesaplar için basit bir varsayılan ek kullanılır (tam gramer garantisi yoktur).
 const TRANSFER_KAYNAK_EKI = {
   'Akbank': "Akbank'tan",
   'Enpara': "Enpara'dan",
@@ -607,13 +680,30 @@ const TRANSFER_HEDEF_EKI = {
 };
 
 function updateTransferAciklama(){
+  if(!transferKaynakBankaEl.value || !transferHedefBankaEl.value) return;
   const kaynakEki = TRANSFER_KAYNAK_EKI[transferKaynakBankaEl.value] || (transferKaynakBankaEl.value + "'tan");
   const hedefEki = TRANSFER_HEDEF_EKI[transferHedefBankaEl.value] || (transferHedefBankaEl.value + "'a");
   transferAciklamaEl.value = kaynakEki + ' ' + hedefEki + ' EFT';
 }
 transferKaynakBankaEl.addEventListener('change', updateTransferAciklama);
 transferHedefBankaEl.addEventListener('change', updateTransferAciklama);
-updateTransferAciklama();
+
+// Hesap listesi API'den geldikçe kaynak/hedef açılır menülerini doldurur
+// (sabit bankalar + Banka Hareketleri'nden eklenen özel hesaplar dahil).
+function populateTransferAccountOptions(){
+  const optionsHtml = accountsData.map(h => '<option>' + escapeHtml(h.ad) + '</option>').join('');
+  const kaynakVal = transferKaynakBankaEl.value;
+  const hedefVal = transferHedefBankaEl.value;
+  transferKaynakBankaEl.innerHTML = optionsHtml;
+  transferHedefBankaEl.innerHTML = optionsHtml;
+  if(accountsData.some(h => h.ad === kaynakVal)){ transferKaynakBankaEl.value = kaynakVal; }
+  if(accountsData.some(h => h.ad === hedefVal)){
+    transferHedefBankaEl.value = hedefVal;
+  } else if(accountsData.length > 1){
+    transferHedefBankaEl.selectedIndex = 1;
+  }
+  updateTransferAciklama();
+}
 
 function fmt(n){
   n = Number(n) || 0;
@@ -668,6 +758,8 @@ async function loadAll(){
     if(json.ok){
       allData = json.data;
       masterRows = json.tumKayitlar || [];
+      accountsData = json.hesaplar || [];
+      hareketlerData = json.hareketler || {};
       hideConnectionError();
       populateYearOptions(yearFilterEl);
       populateYearOptions(chartYearFilterEl);
@@ -675,6 +767,11 @@ async function loadAll(){
       if(firstChartsRender){
         renderCharts();
         firstChartsRender = false;
+      }
+      populateTransferAccountOptions();
+      if(hareketlerModalOverlay.classList.contains('open')){
+        renderAccountButtons();
+        renderHareketPanel();
       }
     } else {
       showConnectionError('⚠️ Veri okunamadı: ' + (json.error || 'bilinmeyen hata'));
@@ -1106,14 +1203,139 @@ document.getElementById('entryForm').addEventListener('submit', async function(e
   }
 });
 
-/* ---------- Bankalar arası transfer ---------- */
+/* ================= Banka Hareketleri ================= */
+
+document.getElementById('openHareketlerBtn').addEventListener('click', () => {
+  hareketlerModalOverlay.classList.add('open');
+  renderAccountButtons();
+  if(selectedHareketBanka){ renderHareketPanel(); }
+});
+document.getElementById('closeHareketlerModalBtn').addEventListener('click', () => {
+  hareketlerModalOverlay.classList.remove('open');
+});
+hareketlerModalOverlay.addEventListener('click', (e) => {
+  if(e.target === hareketlerModalOverlay){ hareketlerModalOverlay.classList.remove('open'); }
+});
+
+function renderAccountButtons(){
+  accountButtonsEl.innerHTML = accountsData.map(h => `
+    <button type="button" class="account-btn${h.ad === selectedHareketBanka ? ' active' : ''}" data-ad="${escapeHtml(h.ad)}">
+      ${escapeHtml(h.ad)} <span class="acc-tip">${h.tip === 'Kredi Kartı' ? 'Kredi Kartı' : 'Banka'}</span>
+    </button>
+  `).join('');
+  accountButtonsEl.querySelectorAll('.account-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectHareketAccount(btn.getAttribute('data-ad')));
+  });
+}
+
+function selectHareketAccount(ad){
+  selectedHareketBanka = ad;
+  renderAccountButtons();
+  renderHareketPanel();
+}
+
+function renderHareketPanel(){
+  if(!selectedHareketBanka){ hareketPanelEl.style.display = 'none'; return; }
+  hareketPanelEl.style.display = 'block';
+
+  const rows = (hareketlerData[selectedHareketBanka] || []).slice();
+  selectedAccountNameEl.textContent = selectedHareketBanka;
+
+  const balance = rows.length ? (Number(rows[rows.length - 1].bakiye) || 0) : 0;
+  selectedAccountBalanceEl.textContent = fmt(balance);
+  selectedAccountBalanceEl.classList.toggle('negative', balance < 0);
+
+  const acilisRow = rows.find(r => r.kaynak === 'Açılış');
+  if(acilisRow){
+    acilisTarihEl.value = acilisRow.tarih;
+    acilisTutarEl.value = acilisRow.bakiye;
+  } else {
+    acilisTarihEl.valueAsDate = new Date();
+    acilisTutarEl.value = '';
+  }
+  acilisStatusEl.textContent = '';
+
+  if(rows.length === 0){
+    hareketTableBodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state">Henüz hareket yok. Önce açılış bakiyesi girebilir ya da bütçede bir kaydı "Gerçekleşen" yaparak/transfer yaparak hareket oluşturabilirsiniz.</div></td></tr>';
+  } else {
+    hareketTableBodyEl.innerHTML = rows.map(r => `
+      <tr>
+        <td data-label="Kod"><span class="badge">${r.kod}</span></td>
+        <td data-label="Tarih">${formatTrDate(r.tarih)}</td>
+        <td data-label="Açıklama">${escapeHtml(r.aciklama)}</td>
+        <td data-label="Kaynak">${r.kaynak || ''}</td>
+        <td data-label="Gider" class="num gider-text">${r.gider ? fmt(r.gider) : ''}</td>
+        <td data-label="Gelir" class="num gelir-text">${r.gelir ? fmt(r.gelir) : ''}</td>
+        <td data-label="Bakiye" class="num">${fmt(r.bakiye)}</td>
+        <td data-label="İşlemler">${r.kaynak === 'Transfer' ? `<button class="del-btn" onclick="deleteHareket('${escapeHtml(selectedHareketBanka)}','${r.kod}')">Sil</button>` : ''}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+document.getElementById('addAccountBtn').addEventListener('click', async () => {
+  const ad = newAccountNameEl.value.trim();
+  if(!ad){ addAccountStatusEl.textContent = 'Hesap adı boş olamaz.'; return; }
+
+  addAccountStatusEl.textContent = 'Ekleniyor...';
+  try {
+    const json = await apiPost({ action: 'addAccount', ad: ad, tip: newAccountTypeEl.value });
+    if(json.ok){
+      addAccountStatusEl.textContent = '✅ "' + ad + '" eklendi.';
+      newAccountNameEl.value = '';
+      await loadAll();
+      selectHareketAccount(json.ad);
+    } else {
+      addAccountStatusEl.textContent = '❌ ' + json.error;
+    }
+  } catch(err){
+    addAccountStatusEl.textContent = '❌ Hata: ' + err.message;
+  }
+});
+
+document.getElementById('saveAcilisBtn').addEventListener('click', async () => {
+  if(!selectedHareketBanka) return;
+  const tarih = acilisTarihEl.value;
+  const tutar = parseFloat(acilisTutarEl.value);
+  if(!tarih || isNaN(tutar)){
+    acilisStatusEl.textContent = 'Tarih ve tutar girilmeli.';
+    return;
+  }
+
+  acilisStatusEl.textContent = 'Kaydediliyor...';
+  try {
+    const json = await apiPost({ action: 'setAcilisBakiyesi', banka: selectedHareketBanka, tarih: tarih, tutar: tutar });
+    if(json.ok){
+      acilisStatusEl.textContent = '✅ Açılış bakiyesi kaydedildi.';
+      await loadAll();
+      renderHareketPanel();
+    } else {
+      acilisStatusEl.textContent = '❌ ' + json.error;
+    }
+  } catch(err){
+    acilisStatusEl.textContent = '❌ Hata: ' + err.message;
+  }
+});
+
+async function deleteHareket(banka, kod){
+  if(!confirm(kod + ' kodlu transfer hareketini (ve eşleşen karşı tarafını) silmek istediğinize emin misiniz?')) return;
+  try {
+    const json = await apiPost({ action: 'deleteHareket', banka: banka, kod: kod });
+    if(json.ok){ await loadAll(); renderHareketPanel(); }
+    else { alert('Silinemedi: ' + json.error); }
+  } catch(err){
+    alert('Silme hatası: ' + err.message);
+  }
+}
+
+/* ---------- Bankalar arası transfer (Banka Hareketleri modalinin altında) ---------- */
 transferFormEl.addEventListener('submit', async function(e){
   e.preventDefault();
 
   const kaynak = transferKaynakBankaEl.value;
   const hedef = transferHedefBankaEl.value;
-  if(kaynak === hedef){
-    alert('Kaynak ve hedef banka aynı olamaz.');
+  if(!kaynak || !hedef || kaynak === hedef){
+    alert('Kaynak ve hedef hesap aynı olamaz.');
     return;
   }
   const tutar = parseFloat(transferTutarEl.value);
@@ -1125,8 +1347,7 @@ transferFormEl.addEventListener('submit', async function(e){
     hedefBanka: hedef,
     tarih: transferTarihEl.value,
     tutar: tutar,
-    aciklama: transferAciklamaEl.value || '',
-    durum: transferDurumEl.value
+    aciklama: transferAciklamaEl.value || ''
   };
 
   transferSubmitBtn.disabled = true;
@@ -1137,9 +1358,9 @@ transferFormEl.addEventListener('submit', async function(e){
     if(json.ok){
       transferFormEl.reset();
       transferTarihEl.valueAsDate = new Date();
-      transferDurumEl.value = 'Gerçekleşen';
-      updateTransferAciklama();
       await loadAll();
+      populateTransferAccountOptions();
+      renderHareketPanel();
     } else {
       alert('Transfer kaydedilemedi: ' + json.error);
     }
