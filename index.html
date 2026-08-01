@@ -595,6 +595,10 @@
     </div>
     <p class="hint">Banka, Tarih, Gider, Gelir, Açıklama, Borç Tipi, Durum ve Limit sütunları birebir aynı olan kayıtlar mükerrer kabul edilir. Kod, Bakiye ve zaman damgaları her kayıtta zaten benzersiz/otomatik üretildiği için karşılaştırmaya dahil edilmez — aksi halde hiçbir kayıt "aynı" sayılmazdı. Aşağıda bulunan her grupta hangi kayıt(lar)ı silmek istediğinizi işaretleyip en altta "Seçilenleri Sil"e basın; bir grupta en az bir kayıt işaretsiz bırakmanız önerilir.</p>
     <div class="status-msg" id="duplicatesStatus"></div>
+    <div class="modal-actions" id="duplicatesBulkActions" style="display:none;">
+      <button type="button" class="btn-secondary" id="selectAllGroupsBtn">Tüm gruplarda ilki hariç tümünü işaretle</button>
+      <button type="button" class="btn-secondary" id="clearAllGroupsBtn">Tüm işaretleri temizle</button>
+    </div>
     <div id="duplicatesResultArea"></div>
     <div class="modal-actions">
       <button class="submit-btn" id="deleteSelectedDuplicatesBtn" style="display:none;background:var(--gider);">Seçilenleri Sil</button>
@@ -993,6 +997,9 @@ function escapeHtml(s){
 const duplicatesModalOverlay = document.getElementById('duplicatesModalOverlay');
 const duplicatesResultAreaEl = document.getElementById('duplicatesResultArea');
 const duplicatesStatusEl = document.getElementById('duplicatesStatus');
+const duplicatesBulkActionsEl = document.getElementById('duplicatesBulkActions');
+const selectAllGroupsBtn = document.getElementById('selectAllGroupsBtn');
+const clearAllGroupsBtn = document.getElementById('clearAllGroupsBtn');
 const deleteSelectedDuplicatesBtn = document.getElementById('deleteSelectedDuplicatesBtn');
 let duplicateGroups = []; // [[row, row, ...], ...] — her alt dizi bir mükerrer grubu
 
@@ -1027,8 +1034,10 @@ function renderDuplicates(){
   if(duplicateGroups.length === 0){
     duplicatesResultAreaEl.innerHTML = '<div class="dup-empty">Mükerrer kayıt bulunamadı. 🎉</div>';
     deleteSelectedDuplicatesBtn.style.display = 'none';
+    duplicatesBulkActionsEl.style.display = 'none';
     return;
   }
+  duplicatesBulkActionsEl.style.display = 'flex';
   duplicatesResultAreaEl.innerHTML = duplicateGroups.map((group, gi) => `
     <div class="dup-group">
       <div class="dup-group-header">
@@ -1057,6 +1066,17 @@ function selectAllButFirst(gi){
     cb.checked = cb.getAttribute('data-row') !== '0';
   });
 }
+
+// Tek tek her grupta "İlki hariç tümünü işaretle"ye basmak zorunda kalmamak
+// için: tüm gruplarda aynı anda ilk kayıt hariç geri kalanını işaretler.
+selectAllGroupsBtn.addEventListener('click', () => {
+  document.querySelectorAll('.dup-checkbox').forEach(cb => {
+    cb.checked = cb.getAttribute('data-row') !== '0';
+  });
+});
+clearAllGroupsBtn.addEventListener('click', () => {
+  document.querySelectorAll('.dup-checkbox').forEach(cb => { cb.checked = false; });
+});
 
 document.getElementById('findDuplicatesBtn').addEventListener('click', () => {
   duplicatesModalOverlay.classList.add('open');
