@@ -89,13 +89,39 @@
   th.sortable{cursor:pointer;user-select:none;}
   th.sortable:hover{color:var(--primary);}
   th .sort-arrow{font-size:10px;margin-left:3px;color:var(--primary);}
-  .filter-row th{padding:5px 6px;background:#fff;position:sticky;top:29px;}
-  .filter-row input, .filter-row select{width:100%;padding:4px 6px;font-size:11.5px;border:1px solid var(--border);border-radius:5px;}
   td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .gelir-text{color:var(--gelir);}
   .gider-text{color:var(--gider);}
   .table-wrap{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;}
   .top-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+  .records-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .records-filters input, .records-filters select{width:auto;flex:1 1 140px;min-width:120px;font-size:13px;padding:8px 10px;}
+
+  /* Dar ekranlarda (telefon) tablo yatay kaydırma gerektirmesin diye satırlar
+     kart görünümüne dönüşür: her kayıt, üst üste etiket:değer satırlarından
+     oluşan bir kart olur, tüm veriler sayfa genişliğinde tam görünür. */
+  @media (max-width:760px){
+    .table-wrap{max-height:none;overflow:visible;border:none;}
+    table{border:none;}
+    thead{display:none;}
+    tbody, tr{display:block;width:100%;}
+    tbody tr{
+      border:1px solid var(--border);border-radius:10px;margin-bottom:10px;
+      padding:10px 12px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.03);
+    }
+    tbody tr:has(.empty-state){border:none;padding:0;}
+    td:has(.empty-state){display:block;text-align:center;}
+    td{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;
+      border:none;border-bottom:1px solid #f1f2f4;padding:7px 0;white-space:normal;text-align:right;
+    }
+    td:last-child{border-bottom:none;padding-top:10px;}
+    td::before{
+      content:attr(data-label);font-weight:600;color:var(--muted);font-size:11.5px;
+      text-align:left;flex-shrink:0;
+    }
+    td:empty{display:none;}
+  }
   .btn-secondary{
     padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;
     font-size:13.5px;cursor:pointer;color:var(--text);font-weight:500;
@@ -168,6 +194,8 @@
     .row2{grid-template-columns:1fr;}
     .summary-cards{grid-template-columns:1fr 1fr;}
     .top-actions{flex-direction:column;align-items:stretch;}
+    .records-filters{flex-direction:column;}
+    .records-filters input, .records-filters select{width:100%;}
     h1{font-size:19px;}
     .card{padding:16px;}
     .modal-box{padding:16px;}
@@ -331,12 +359,52 @@
     </div>
     <p class="hint" id="viewModeHint" style="margin-top:-6px;margin-bottom:10px;">Tarih bazlı veritabanı görünümü: tüm bankalar, tarih sırasına göre, genel bakiye ile.</p>
 
+    <div class="records-filters">
+      <input type="text" id="filterAciklama" placeholder="Açıklamada ara...">
+      <select id="filterBorcTipi">
+        <option value="__all__">Tüm Borç Tipleri</option>
+        <option>Gelir</option>
+        <option>Sabit Giderler</option>
+        <option>Kredi</option>
+        <option>Kredi Kartı</option>
+        <option>Şirket Masrafları</option>
+        <option>Bes</option>
+        <option>Elden Ödeme</option>
+        <option>Banka Transferi</option>
+      </select>
+      <select id="filterDurum">
+        <option value="__all__">Tüm Durumlar</option>
+        <option>Bütçe</option>
+        <option>Gerçekleşen</option>
+      </select>
+      <select id="sortSelect">
+        <option value="tarih:asc" selected>Tarih (Eski → Yeni)</option>
+        <option value="tarih:desc">Tarih (Yeni → Eski)</option>
+        <option value="kod:asc">Kod (A → Z)</option>
+        <option value="kod:desc">Kod (Z → A)</option>
+        <option value="aciklama:asc">Açıklama (A → Z)</option>
+        <option value="aciklama:desc">Açıklama (Z → A)</option>
+        <option value="banka:asc">Banka (A → Z)</option>
+        <option value="banka:desc">Banka (Z → A)</option>
+        <option value="borcTipi:asc">Borç Tipi (A → Z)</option>
+        <option value="borcTipi:desc">Borç Tipi (Z → A)</option>
+        <option value="durum:asc">Durum (A → Z)</option>
+        <option value="durum:desc">Durum (Z → A)</option>
+        <option value="gider:desc">Gider (Yüksek → Düşük)</option>
+        <option value="gider:asc">Gider (Düşük → Yüksek)</option>
+        <option value="gelir:desc">Gelir (Yüksek → Düşük)</option>
+        <option value="gelir:asc">Gelir (Düşük → Yüksek)</option>
+        <option value="bakiye:desc">Bakiye (Yüksek → Düşük)</option>
+        <option value="bakiye:asc">Bakiye (Düşük → Yüksek)</option>
+      </select>
+    </div>
+
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th class="sortable" data-col="kod">Kod<span class="sort-arrow"></span></th>
-            <th class="sortable" data-col="tarih">Tarih<span class="sort-arrow"></span></th>
+            <th class="sortable" data-col="tarih">Tarih<span class="sort-arrow">▲</span></th>
             <th class="sortable" data-col="aciklama">Açıklama<span class="sort-arrow"></span></th>
             <th class="sortable" data-col="banka">Banka<span class="sort-arrow"></span></th>
             <th class="sortable" data-col="borcTipi">Borç Tipi<span class="sort-arrow"></span></th>
@@ -346,41 +414,11 @@
             <th class="sortable num" data-col="bakiye">Bakiye<span class="sort-arrow"></span></th>
             <th></th>
           </tr>
-          <tr class="filter-row">
-            <th></th>
-            <th></th>
-            <th><input type="text" id="filterAciklama" placeholder="Ara..."></th>
-            <th></th>
-            <th>
-              <select id="filterBorcTipi">
-                <option value="__all__">Tümü</option>
-                <option>Gelir</option>
-                <option>Sabit Giderler</option>
-                <option>Kredi</option>
-                <option>Kredi Kartı</option>
-                <option>Şirket Masrafları</option>
-                <option>Bes</option>
-                <option>Elden Ödeme</option>
-                <option>Banka Transferi</option>
-              </select>
-            </th>
-            <th>
-              <select id="filterDurum">
-                <option value="__all__">Tümü</option>
-                <option>Bütçe</option>
-                <option>Gerçekleşen</option>
-              </select>
-            </th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-          </tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
-    <p class="footer-note">İki veritabanı birlikte tutulur: (1) her bankanın kendi sekmesi, kendi bakiyesiyle; (2) "Tüm Kayıtlar (Tarih Bazlı)" sekmesi, tüm bankaları tarih sırasına göre birleştirip genel bakiyeyi hesaplar. Yukarıdaki "Tüm Bankalar" filtresi bu ikinci (tarih bazlı) veritabanını gösterir — eski bir kaydı bulup "Düzenle" ile üzerinde değişiklik yapabilirsiniz. Başlıklara tıklayarak sıralayabilir, başlık altındaki kutulardan filtreleyebilirsiniz.</p>
+    <p class="footer-note">İki veritabanı birlikte tutulur: (1) her bankanın kendi sekmesi, kendi bakiyesiyle; (2) "Tüm Kayıtlar (Tarih Bazlı)" sekmesi, tüm bankaları tarih sırasına göre birleştirip genel bakiyeyi hesaplar. Yukarıdaki "Tüm Bankalar" filtresi bu ikinci (tarih bazlı) veritabanını gösterir — eski bir kaydı bulup "Düzenle" ile üzerinde değişiklik yapabilirsiniz. Yukarıdaki filtre kutularını ve "Sırala" menüsünü kullanabilir, geniş ekranda başlıklara tıklayarak da sıralayabilirsiniz. Telefonda kayıtlar, yatay kaydırma gerekmeden kart olarak listelenir.</p>
 
     <div class="period-bar">
       <div class="period-selects">
@@ -675,7 +713,19 @@ function populateYearOptions(selectEl){
   }
 }
 
-/* ---------- Sıralama başlıkları ---------- */
+/* ---------- Sıralama (başlık tıklama + "Sırala" menüsü, ikisi senkron) ---------- */
+const sortSelectEl = document.getElementById('sortSelect');
+
+function syncSortControls(){
+  document.querySelectorAll('th.sortable .sort-arrow').forEach(s => s.textContent = '');
+  const activeTh = document.querySelector('th.sortable[data-col="' + sortColumn + '"]');
+  if(activeTh){ activeTh.querySelector('.sort-arrow').textContent = sortDirection === 'asc' ? '▲' : '▼'; }
+  const optionValue = sortColumn + ':' + sortDirection;
+  if(sortSelectEl.querySelector('option[value="' + optionValue + '"]')){
+    sortSelectEl.value = optionValue;
+  }
+}
+
 document.querySelectorAll('th.sortable').forEach(th => {
   th.addEventListener('click', () => {
     const col = th.getAttribute('data-col');
@@ -685,10 +735,17 @@ document.querySelectorAll('th.sortable').forEach(th => {
       sortColumn = col;
       sortDirection = 'asc';
     }
-    document.querySelectorAll('th.sortable .sort-arrow').forEach(s => s.textContent = '');
-    th.querySelector('.sort-arrow').textContent = sortDirection === 'asc' ? '▲' : '▼';
+    syncSortControls();
     renderTable();
   });
+});
+
+sortSelectEl.addEventListener('change', () => {
+  const [col, dir] = sortSelectEl.value.split(':');
+  sortColumn = col;
+  sortDirection = dir;
+  syncSortControls();
+  renderTable();
 });
 
 /* ---------- Tabloyu çiz ---------- */
@@ -747,16 +804,16 @@ function renderTable(){
   } else {
     tbody.innerHTML = rows.map(e => `
       <tr>
-        <td><span class="badge">${e.kod}</span></td>
-        <td>${formatTrDate(e.tarih)}</td>
-        <td>${escapeHtml(e.aciklama)}</td>
-        <td>${e.banka}</td>
-        <td>${e.borcTipi || ''}</td>
-        <td>${e.durum || ''}</td>
-        <td class="num gider-text">${e.gider ? fmt(e.gider) : ''}</td>
-        <td class="num gelir-text">${e.gelir ? fmt(e.gelir) : ''}</td>
-        <td class="num">${fmt(e.bakiye)}</td>
-        <td>
+        <td data-label="Kod"><span class="badge">${e.kod}</span></td>
+        <td data-label="Tarih">${formatTrDate(e.tarih)}</td>
+        <td data-label="Açıklama">${escapeHtml(e.aciklama)}</td>
+        <td data-label="Banka">${e.banka}</td>
+        <td data-label="Borç Tipi">${e.borcTipi || ''}</td>
+        <td data-label="Durum">${e.durum || ''}</td>
+        <td data-label="Gider" class="num gider-text">${e.gider ? fmt(e.gider) : ''}</td>
+        <td data-label="Gelir" class="num gelir-text">${e.gelir ? fmt(e.gelir) : ''}</td>
+        <td data-label="Bakiye" class="num">${fmt(e.bakiye)}</td>
+        <td data-label="İşlemler">
           <button class="edit-btn" onclick="startEdit('${e.banka}','${e.kod}')">Düzenle</button>
           <button class="del-btn" onclick="deleteEntry('${e.banka}','${e.kod}')">Sil</button>
         </td>
@@ -1361,6 +1418,7 @@ confirmBulkBtn.addEventListener('click', async () => {
 });
 
 /* ---------- Başlangıç ---------- */
+syncSortControls();
 renderTable();
 loadAll();
 </script>
