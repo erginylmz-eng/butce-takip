@@ -1089,23 +1089,38 @@ duplicatesModalOverlay.addEventListener('click', (e) => {
   if(e.target === duplicatesModalOverlay){ duplicatesModalOverlay.classList.remove('open'); }
 });
 
+// Önceden burada seçilen her kayıt için ayrı bir "delete" isteği sırayla
+// (await ile birer birer) gönderiliyordu. Her tek silme, backend'de o
+// bankanın TÜM alt satırlarını yeniden hesaplıyor VE tüm "Tüm Kayıtlar"
+// sekmesini yeniden derliyordu — onlarca mükerrer kayıt seçildiğinde bu,
+// N kez tekrarlanan ağır bir işlem oldu ve pratikte tamamlanamıyordu.
+// Artık tüm seçili kayıtlar TEK bir "bulkDelete" isteğiyle gönderiliyor;
+// backend tarafında da sekme başına tek seferde silinip tek seferde
+// yeniden hesaplanıyor (bkz. AppsScript_Kod.gs: bulkDeleteRecords).
 deleteSelectedDuplicatesBtn.addEventListener('click', async () => {
   const checked = Array.from(document.querySelectorAll('.dup-checkbox:checked'));
   if(checked.length === 0){ alert('Silmek için en az bir kayıt işaretleyin.'); return; }
   if(!confirm(checked.length + ' kayıt kalıcı olarak silinecek. Emin misiniz?')) return;
 
   deleteSelectedDuplicatesBtn.disabled = true;
-  deleteSelectedDuplicatesBtn.textContent = 'Siliniyor...';
-  let ok = 0, fail = 0;
-  for(const cb of checked){
-    try {
-      const json = await apiPost({ action: 'delete', banka: cb.getAttribute('data-banka'), kod: cb.getAttribute('data-kod') });
-      if(json.ok){ ok++; } else { fail++; }
-    } catch(err){ fail++; }
+  deleteSelectedDuplicatesBtn.textContent = 'Siliniyor... (' + checked.length + ' kayıt)';
+  duplicatesStatusEl.textContent = '';
+
+  const items = checked.map(cb => ({ banka: cb.getAttribute('data-banka'), kod: cb.getAttribute('data-kod') }));
+
+  try {
+    const json = await apiPost({ action: 'bulkDelete', items });
+    if(json.ok){
+      duplicatesStatusEl.textContent = (json.deleted || items.length) + ' kayıt silindi.' + (json.errors && json.errors.length ? ' Uyarılar: ' + json.errors.join(', ') : '');
+    } else {
+      duplicatesStatusEl.textContent = 'Silinemedi: ' + (json.error || 'bilinmeyen hata');
+    }
+  } catch(err){
+    duplicatesStatusEl.textContent = 'Silme hatası: ' + err.message;
   }
+
   deleteSelectedDuplicatesBtn.disabled = false;
   deleteSelectedDuplicatesBtn.textContent = 'Seçilenleri Sil';
-  duplicatesStatusEl.textContent = ok + ' kayıt silindi' + (fail > 0 ? ', ' + fail + ' kayıt silinemedi' : '') + '.';
 
   await loadAll();
   findDuplicates(); // kalan mükerrerleri güncel veriyle yeniden göster
